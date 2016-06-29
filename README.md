@@ -2,7 +2,7 @@
 
 This project is a command line interface that wraps the Shipyard build and deploy APIs.
 
-**This is not meant to replace `kubectl`, but merely to wrap the many available API resources of Shipyard**
+**While the usage is similar to `kubectl`, this is not meant to replace `kubectl`, but merely to wrap the many available API resources of Shipyard**
 
 ###Installation
 From your Go workspace, run the following:
