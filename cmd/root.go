@@ -41,12 +41,10 @@ var pubKey string
 var RootCmd = &cobra.Command{
 	Use:   "shipyardctl",
 	Short: "A CLI wrapper for Enrober API",
-	Long: `shipyardctl is a CLI wrapper for the deployment management API known as Enrober.
-This API is used for managing and creating environments and deployments
-in the Apigee Kuberenetes cluster solution. It is to be used in conjunction with Shipyard,
-for the image building.
+	Long: `shipyardctl is a CLI wrapper for the Shipyard build and deploy APIs.
 
-Pair this command with any of the available functions for environments or deployments.`,
+Pair this command with any of the available functions for applications, images,
+bundles, environments or deployments.`,
 }
 
 // Execute adds all child commands to the root command sets flags appropriately.

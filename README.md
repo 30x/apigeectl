@@ -11,12 +11,12 @@ From your Go workspace, run the following:
 ```
 
 ###Environment
-`shipyardctl` expects the following three environment variables be in place in order to use it.
+`shipyardctl` expects the following environment variables be in place in order to use it.
 
 - `APIGEE_ORG`: Your Apigee org name
 - `APIGEE_ENVIRONMENT_NAME`: Your Apigee env name
 - `APIGEE_TOKEN`: Your JWT access token generated from Apigee credentials
-- `CLUSTER_TARGET`: The _protocol_ and _host name_ of the k8s cluster (default: "https://shipyard.apigee.com")
+- `CLUSTER_TARGET`: The _protocol_ and _hostname_ of the k8s cluster (**default:** "https://shipyard.apigee.com")
 
 ###Usage
 
@@ -56,19 +56,24 @@ Please also see `shipyardctl --help` for more information on the available comma
 ```
 The build command takes the name of your application, the revision number, the public port/path to reach your application
 and the path to your zipped Node app.
+
 _Note: there must be a valid package.json in the root of zipped application_
 
 **Verify image creation**
 ```sh
 > shipyardctl get image example 1
 ```
-This merely retrieves the available information for the image specified by the applicaiton name and revision number
+This retrieves the available information for the image specified by the application name and revision number
 
 **Create a new environment**
 ```sh
-> shipyardctl create environment "test" "test.host.name1" "test.host.name2"
+> shipyardctl create environment "test" "<org name>-test.apigee.net" "<org name>-prod.apigee.net"
+> export PUBLIC_KEY="<copy public key in creatoin response here>"
 ```
-Here we create a new environment with the name "test" and the accepted hostnames of "test.host.name1" and "test.host.name2"
+Here we create a new environment with the name "test" and the accepted hostnames of "<org name>-test.apigee.net"
+and "<org name>-prod.apigee.net", a space delimited list.
+
+_Note: the naming convention used for hostnames is not strictly enforced, but will make Edge integration easier_
 
 **Retrieve the newly created environment by name**
 ```sh

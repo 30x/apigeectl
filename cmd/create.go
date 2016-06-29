@@ -22,9 +22,8 @@ import (
 // createCmd represents the create command
 var createCmd = &cobra.Command{
 	Use:   "create",
-	Short: "creates an environment or deployment",
-	Long: `This command, when paired with the proper subcommand, environment or deployment,
-will create the respective construct.`,
+	Short: "creates a Shipyard artifact",
+	Long: `This command, when paired with the proper subcommand, will create the respective artifact.`,
 }
 
 func init() {

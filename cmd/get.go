@@ -22,11 +22,11 @@ import (
 // getCmd represents the get command
 var getCmd = &cobra.Command{
 	Use:   "get",
-	Short: "retrieves information on an environment or deployment",
-	Long: `This command, when paired with the proper subcommand, environment or deployment
-will procure the appropraite information. An example call would look like:
+	Short: "retrieves information on a Shipyard artifact",
+	Long: `This command, when paired with the proper subcommand will procure
+the appropraite information. An example call would look like:
 
-shipyardctl get deployment env1 dep1`,
+$ shipyardctl get deployment env1 dep1`,
 }
 
 func init() {

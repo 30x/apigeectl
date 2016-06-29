@@ -22,9 +22,9 @@ import (
 // deleteCmd represents the delete command
 var deleteCmd = &cobra.Command{
 	Use:   "delete",
-	Short: "deletes an environment or deployment",
-	Long: `This command enables the deletion of an environment or deployment,
-based on the given environment/deployment name.`,
+	Short: "deletes a Shipyard artifact",
+	Long: `This command enables the deletion of a Shipyard artifact,
+based on the given meta-data.`,
 }
 
 func init() {
