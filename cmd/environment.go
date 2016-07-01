@@ -58,12 +58,12 @@ $ shipyardctl get environment --all`,
 			req.Header.Set("Authorization", "Bearer " + authToken)
 			response, err := http.DefaultClient.Do(req)
 
-			if verbose {
-				PrintVerboseResponse(response)
-			}
-
 			if err != nil {
 				log.Fatal(err)
+			}
+
+			if verbose {
+				PrintVerboseResponse(response)
 			}
 
 			defer response.Body.Close()
@@ -87,12 +87,12 @@ $ shipyardctl get environment --all`,
 			req.Header.Set("Authorization", "Bearer " + authToken)
 			response, err := http.DefaultClient.Do(req)
 
-			if verbose {
-				PrintVerboseResponse(response)
-			}
-
 			if err != nil {
 				log.Fatal(err)
+			}
+
+			if verbose {
+				PrintVerboseResponse(response)
 			}
 
 			defer response.Body.Close()
@@ -127,13 +127,13 @@ $ shipyardctl delete environment env1`,
 		req.Header.Set("Authorization", "Bearer " + authToken)
 		response, err := http.DefaultClient.Do(req)
 
-		if verbose {
-			PrintVerboseResponse(response)
-		}
-
 		if err != nil {
 			log.Fatal(err)
 		}
+
+		if verbose {
+				PrintVerboseResponse(response)
+			}
 
 		defer response.Body.Close()
 		if response.StatusCode >= 200 && response.StatusCode < 300 {
@@ -181,13 +181,13 @@ $ shipyardctl create environment env1 "test.host.name1" "test.host.name2"`,
 		req.Header.Set("Authorization", "Bearer " + authToken)
 		response, err := http.DefaultClient.Do(req)
 
-		if verbose {
-			PrintVerboseResponse(response)
-		}
-
 		if err != nil {
 			log.Fatal(err)
 		}
+
+		if verbose {
+				PrintVerboseResponse(response)
+			}
 
 		defer response.Body.Close()
 		if response.StatusCode >= 200 && response.StatusCode < 300 {
@@ -236,13 +236,13 @@ $ shipyardctl patch env1 "test.host.name3" "test.host.name4"`,
 		req.Header.Set("Authorization", "Bearer " + authToken)
 		response, err := http.DefaultClient.Do(req)
 
-		if verbose {
-			PrintVerboseResponse(response)
-		}
-
 		if err != nil {
 			log.Fatal(err)
 		}
+
+		if verbose {
+				PrintVerboseResponse(response)
+			}
 
 		defer response.Body.Close()
 		if response.StatusCode >= 200 && response.StatusCode < 300 {

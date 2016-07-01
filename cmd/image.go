@@ -88,12 +88,12 @@ $ shipyardctl build image example 1 "9000:/example" "./path/to/zipped/app"`,
 		req.Header.Add("Content-Type", writer.FormDataContentType())
 		response, err := http.DefaultClient.Do(req)
 
-		if verbose {
-			PrintVerboseResponse(response)
-		}
-
 		if err != nil {
 			log.Fatal(err)
+		}
+
+		if verbose {
+			PrintVerboseResponse(response)
 		}
 
 		// dump response to stdout
@@ -140,12 +140,12 @@ $ shipyardctl get image example --all`,
 			req.Header.Set("Authorization", "Bearer " + authToken)
 			response, err := http.DefaultClient.Do(req)
 
-			if verbose {
-				PrintVerboseResponse(response)
-			}
-
 			if err != nil {
 				log.Fatal(err)
+			}
+
+			if verbose {
+				PrintVerboseResponse(response)
 			}
 
 			defer response.Body.Close()
@@ -171,12 +171,12 @@ $ shipyardctl get image example --all`,
 			req.Header.Set("Authorization", "Bearer " + authToken)
 			response, err := http.DefaultClient.Do(req)
 
-			if verbose {
-				PrintVerboseResponse(response)
-			}
-
 			if err != nil {
 				log.Fatal(err)
+			}
+
+			if verbose {
+				PrintVerboseResponse(response)
 			}
 
 			defer response.Body.Close()
@@ -216,12 +216,12 @@ $ shipyardctl delete image example 1`,
 		req.Header.Set("Authorization", "Bearer " + authToken)
 		response, err := http.DefaultClient.Do(req)
 
-		if verbose {
-			PrintVerboseResponse(response)
-		}
-
 		if err != nil {
 			log.Fatal(err)
+		}
+
+		if verbose {
+			PrintVerboseResponse(response)
 		}
 
 		defer response.Body.Close()

@@ -83,12 +83,12 @@ $ shipyardctl get deployment dep1`,
 			req.Header.Set("Authorization", "Bearer " + authToken)
 			response, err := http.DefaultClient.Do(req)
 
-			if verbose {
-				PrintVerboseResponse(response)
-			}
-
 			if err != nil {
 				log.Fatal(err)
+			}
+
+			if verbose {
+				PrintVerboseResponse(response)
 			}
 
 			defer response.Body.Close()
@@ -115,12 +115,12 @@ $ shipyardctl get deployment dep1`,
 			req.Header.Set("Authorization", "Bearer " + authToken)
 			response, err := http.DefaultClient.Do(req)
 
-			if verbose {
-				PrintVerboseResponse(response)
-			}
-
 			if err != nil {
 				log.Fatal(err)
+			}
+
+			if verbose {
+				PrintVerboseResponse(response)
 			}
 
 			// dump response body to stdout
@@ -168,12 +168,12 @@ $ shipyardctl delete deployment env1 dep1`,
 		req.Header.Set("Authorization", "Bearer " + authToken)
 		response, err := http.DefaultClient.Do(req)
 
-		if verbose {
-			PrintVerboseResponse(response)
-		}
-
 		if err != nil {
 			log.Fatal(err)
+		}
+
+		if verbose {
+			PrintVerboseResponse(response)
 		}
 
 		// dump response body to stdout
@@ -234,12 +234,12 @@ $ shipyardctl create deployment env1 dep1 "test.host.name" "test.host.name" 2 "h
 		req.Header.Set("Content-Type", "application/json")
 		response, err := http.DefaultClient.Do(req)
 
-		if verbose {
-			PrintVerboseResponse(response)
-		}
-
 		if err != nil {
 			log.Fatal(err)
+		}
+
+		if verbose {
+			PrintVerboseResponse(response)
 		}
 
 		// dump response to stdout
@@ -288,12 +288,12 @@ $ shipyardctl patch deployment env1 dep1 '{"replicas": 3, "publicHosts": "test.h
 		req.Header.Set("Content-Type", "application/json")
 		response, err := http.DefaultClient.Do(req)
 
-		if verbose {
-			PrintVerboseResponse(response)
-		}
-
 		if err != nil {
 			log.Fatal(err)
+		}
+
+		if verbose {
+			PrintVerboseResponse(response)
 		}
 
 		defer response.Body.Close()
