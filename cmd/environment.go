@@ -64,12 +64,12 @@ $ shipyardctl get environment --all`,
 
 			if err != nil {
 				log.Fatal(err)
-			} else {
-				defer response.Body.Close()
-				_, err := io.Copy(os.Stdout, response.Body)
-				if err != nil {
-					log.Fatal(err)
-				}
+			}
+
+			defer response.Body.Close()
+			_, err = io.Copy(os.Stdout, response.Body)
+			if err != nil {
+				log.Fatal(err)
 			}
 		} else {
 			if len(args) == 0 {
@@ -93,12 +93,12 @@ $ shipyardctl get environment --all`,
 
 			if err != nil {
 				log.Fatal(err)
-			} else {
-				defer response.Body.Close()
-				_, err := io.Copy(os.Stdout, response.Body)
-				if err != nil {
-					log.Fatal(err)
-				}
+			}
+
+			defer response.Body.Close()
+			_, err = io.Copy(os.Stdout, response.Body)
+			if err != nil {
+				log.Fatal(err)
 			}
 		}
 	},
@@ -133,15 +133,15 @@ $ shipyardctl delete environment env1`,
 
 		if err != nil {
 			log.Fatal(err)
-		} else {
-			defer response.Body.Close()
-			if response.StatusCode >= 200 && response.StatusCode < 300 {
-				fmt.Println("\nDeletion of " + envName + " was sucessful\n")
-			}
-			_, err := io.Copy(os.Stdout, response.Body)
-			if err != nil {
-				log.Fatal(err)
-			}
+		}
+
+		defer response.Body.Close()
+		if response.StatusCode >= 200 && response.StatusCode < 300 {
+			fmt.Println("\nDeletion of " + envName + " was sucessful\n")
+		}
+		_, err = io.Copy(os.Stdout, response.Body)
+		if err != nil {
+			log.Fatal(err)
 		}
 	},
 }
@@ -187,15 +187,15 @@ $ shipyardctl create environment env1 "test.host.name1" "test.host.name2"`,
 
 		if err != nil {
 			log.Fatal(err)
-		} else {
-			defer response.Body.Close()
-			if response.StatusCode >= 200 && response.StatusCode < 300 {
-				fmt.Println("\nCreation of " + envName + " was sucessful\n")
-			}
-			_, err := io.Copy(os.Stdout, response.Body)
-			if err != nil {
-				log.Fatal(err)
-			}
+		}
+
+		defer response.Body.Close()
+		if response.StatusCode >= 200 && response.StatusCode < 300 {
+			fmt.Println("\nCreation of " + envName + " was sucessful\n")
+		}
+		_, err = io.Copy(os.Stdout, response.Body)
+		if err != nil {
+			log.Fatal(err)
 		}
 	},
 }
@@ -242,15 +242,15 @@ $ shipyardctl patch env1 "test.host.name3" "test.host.name4"`,
 
 		if err != nil {
 			log.Fatal(err)
-		} else {
-			defer response.Body.Close()
-			if response.StatusCode >= 200 && response.StatusCode < 300 {
-				fmt.Println("\nPatch of " + envName + " was sucessful\n")
-			}
-			_, err := io.Copy(os.Stdout, response.Body)
-			if err != nil {
-				log.Fatal(err)
-			}
+		}
+
+		defer response.Body.Close()
+		if response.StatusCode >= 200 && response.StatusCode < 300 {
+			fmt.Println("\nPatch of " + envName + " was sucessful\n")
+		}
+		_, err = io.Copy(os.Stdout, response.Body)
+		if err != nil {
+			log.Fatal(err)
 		}
 	},
 }

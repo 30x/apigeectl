@@ -96,7 +96,7 @@ func PrintVerboseRequest(req *http.Request) {
 		fmt.Println("PUBLIC_KEY="+pubKey)
 	}
 
-	dump, err := httputil.DumpRequest(req, true)
+	dump, err := httputil.DumpRequestOut(req, true)
 	if err != nil {
 		fmt.Println("Request dump failed. Request state is unknown. Aborting.")
 		os.Exit(1)

@@ -89,12 +89,12 @@ $ shipyardctl get deployment dep1`,
 
 			if err != nil {
 				log.Fatal(err)
-			} else {
-				defer response.Body.Close()
-				_, err := io.Copy(os.Stdout, response.Body)
-				if err != nil {
-					log.Fatal(err)
-				}
+			}
+
+			defer response.Body.Close()
+			_, err = io.Copy(os.Stdout, response.Body)
+			if err != nil {
+				log.Fatal(err)
 			}
 		} else { // get active deployment by name
 			if len(args) < 2 {
@@ -121,12 +121,13 @@ $ shipyardctl get deployment dep1`,
 
 			if err != nil {
 				log.Fatal(err)
-			} else { // dump response body to stdout
-				defer response.Body.Close()
-				_, err := io.Copy(os.Stdout, response.Body)
-				if err != nil {
-					log.Fatal(err)
-				}
+			}
+
+			// dump response body to stdout
+			defer response.Body.Close()
+			_, err = io.Copy(os.Stdout, response.Body)
+			if err != nil {
+				log.Fatal(err)
 			}
 		}
 	},
@@ -173,16 +174,16 @@ $ shipyardctl delete deployment env1 dep1`,
 
 		if err != nil {
 			log.Fatal(err)
-		} else {
-			// dump response body to stdout
-			defer response.Body.Close()
-			if response.StatusCode >= 200 && response.StatusCode < 300 {
-				fmt.Println("\nDeletion of " + depName + " in " + envName + " was sucessful\n")
-			}
-			_, err := io.Copy(os.Stdout, response.Body)
-			if err != nil {
-				log.Fatal(err)
-			}
+		}
+
+		// dump response body to stdout
+		defer response.Body.Close()
+		if response.StatusCode >= 200 && response.StatusCode < 300 {
+			fmt.Println("\nDeletion of " + depName + " in " + envName + " was sucessful\n")
+		}
+		_, err = io.Copy(os.Stdout, response.Body)
+		if err != nil {
+			log.Fatal(err)
 		}
 	},
 }
@@ -239,16 +240,16 @@ $ shipyardctl create deployment env1 dep1 "test.host.name" "test.host.name" 2 "h
 
 		if err != nil {
 			log.Fatal(err)
-		} else {
-			// dump response to stdout
-			defer response.Body.Close()
-			if response.StatusCode >= 200 && response.StatusCode < 300 {
-				fmt.Println("\nCreation of " + depName + " in " + envName + " was sucessful\n")
-			}
-			_, err := io.Copy(os.Stdout, response.Body)
-			if err != nil {
-				log.Fatal(err)
-			}
+		}
+
+		// dump response to stdout
+		defer response.Body.Close()
+		if response.StatusCode >= 200 && response.StatusCode < 300 {
+			fmt.Println("\nCreation of " + depName + " in " + envName + " was sucessful\n")
+		}
+		_, err = io.Copy(os.Stdout, response.Body)
+		if err != nil {
+			log.Fatal(err)
 		}
 	},
 }
@@ -293,15 +294,15 @@ $ shipyardctl patch deployment env1 dep1 '{"replicas": 3, "publicHosts": "test.h
 
 		if err != nil {
 			log.Fatal(err)
-		} else {
-			defer response.Body.Close()
-			if response.StatusCode >= 200 && response.StatusCode < 300 {
-				fmt.Println("\nPatch of " + depName + " in " + envName + " was sucessful\n")
-			}
-			_, err := io.Copy(os.Stdout, response.Body)
-			if err != nil {
-				log.Fatal(err)
-			}
+		}
+
+		defer response.Body.Close()
+		if response.StatusCode >= 200 && response.StatusCode < 300 {
+			fmt.Println("\nPatch of " + depName + " in " + envName + " was sucessful\n")
+		}
+		_, err = io.Copy(os.Stdout, response.Body)
+		if err != nil {
+			log.Fatal(err)
 		}
 	},
 }
