@@ -21,7 +21,7 @@ import (
 
 // deleteCmd represents the delete command
 var deleteCmd = &cobra.Command{
-	Use:   "delete",
+	Use:   "delete [command]",
 	Short: "deletes a Shipyard artifact",
 	Long: `This command enables the deletion of a Shipyard artifact,
 based on the given meta-data.`,

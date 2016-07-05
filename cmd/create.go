@@ -21,7 +21,7 @@ import (
 
 // createCmd represents the create command
 var createCmd = &cobra.Command{
-	Use:   "create",
+	Use:   "create [command]",
 	Short: "creates a Shipyard artifact",
 	Long: `This command, when paired with the proper subcommand, will create the respective artifact.`,
 }

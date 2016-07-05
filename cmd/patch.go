@@ -21,7 +21,7 @@ import (
 
 // patchCmd represents the patch command
 var patchCmd = &cobra.Command{
-	Use:   "patch",
+	Use:   "patch [command]",
 	Short: "updates an active environment or deployment",
 	Long: `This command enables the update of certain properties of an active
 environment or deployment, based on the given name.`,

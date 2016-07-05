@@ -21,7 +21,7 @@ import (
 
 // getCmd represents the get command
 var getCmd = &cobra.Command{
-	Use:   "get",
+	Use:   "get [command]",
 	Short: "retrieves information on a Shipyard artifact",
 	Long: `This command, when paired with the proper subcommand will procure
 the appropraite information. An example call would look like:
