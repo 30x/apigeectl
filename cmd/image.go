@@ -65,9 +65,14 @@ $ shipyardctl build image example 1 "9000:/example" "./path/to/zipped/app"`,
 		}
 		_, err = io.Copy(part, zip)
 
-		writer.WriteField("namespace", orgName)
+		if len(envVars) > 0 {
+			for i := range envVars {
+				writer.WriteField("envVar", envVars[i])
+			}
+		}
+
 		writer.WriteField("revision", revision)
-		writer.WriteField("application", appName)
+		writer.WriteField("name", appName)
 		writer.WriteField("publicPath", publicPath)
 
 		err = writer.Close()
@@ -75,7 +80,7 @@ $ shipyardctl build image example 1 "9000:/example" "./path/to/zipped/app"`,
 			log.Fatal(err)
 		}
 
-		req, err := http.NewRequest("POST", clusterTarget + buildPath, body)
+		req, err := http.NewRequest("POST", clusterTarget + basePath, body)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -132,7 +137,7 @@ $ shipyardctl get image example --all`,
 
 			appName := args[0]
 
-			req, err := http.NewRequest("GET", clusterTarget + imagePath + orgName + "/applications/" + appName + "/images", nil)
+			req, err := http.NewRequest("GET", clusterTarget + basePath + "/" + appName, nil)
 			if verbose {
 				PrintVerboseRequest(req)
 			}
@@ -163,7 +168,7 @@ $ shipyardctl get image example --all`,
 			appName := args[0]
 			revision := args[1]
 
-			req, err := http.NewRequest("GET", clusterTarget + imagePath + orgName + "/applications/" + appName + "/images/"+revision, nil)
+			req, err := http.NewRequest("GET", clusterTarget + basePath + "/" + appName + "/version/"+revision, nil)
 			if verbose {
 				PrintVerboseRequest(req)
 			}
@@ -208,7 +213,7 @@ $ shipyardctl delete image example 1`,
 		appName := args[0]
 		revision := args[1]
 
-		req, err := http.NewRequest("DELETE", clusterTarget + imagePath + orgName + "/applications/" + appName + "/images/"+revision, nil)
+		req, err := http.NewRequest("DELETE", clusterTarget + basePath + "/" + appName + "/version/"+revision, nil)
 		if verbose {
 			PrintVerboseRequest(req)
 		}
@@ -234,6 +239,7 @@ $ shipyardctl delete image example 1`,
 
 func init() {
 	createCmd.AddCommand(imageCmd)
+	imageCmd.Flags().StringSliceVarP(&envVars, "env", "e", []string{}, "Environment variables to set in the deployment")
 	getCmd.AddCommand(getImageCmd)
 	getImageCmd.Flags().BoolVarP(&all, "all", "a", false, "Retrieve all images for an application")
 	deleteCmd.AddCommand(deleteImageCmd)

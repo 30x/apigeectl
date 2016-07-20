@@ -34,7 +34,7 @@ Example of use:
 
 $ shipyardctl get applications`,
 	Run: func(cmd *cobra.Command, args []string) {
-		req, err := http.NewRequest("GET", clusterTarget + imagePath + orgName + "/applications", nil)
+		req, err := http.NewRequest("GET", clusterTarget + basePath, nil)
 		if verbose {
 			PrintVerboseRequest(req)
 		}

@@ -49,7 +49,6 @@ type DeploymentPatch struct {
 	PtsUrl string
 }
 
-var envVars []string
 const (
 	NAME = 0
 	VALUE = 1
