@@ -32,7 +32,7 @@ var orgName string
 var clusterTarget string
 var authToken string
 var depName string
-var apiPath string
+var enroberPath string
 var basePath string
 var pubKey string
 var envVars []string
@@ -78,7 +78,7 @@ func init() {
 	envName = os.Getenv("APIGEE_ENVIRONMENT_NAME");
 
 	// Enrober API path, appended to clusterTarget before each API call
-	apiPath = "/beeswax/deploy/api/v1"
+	enroberPath = "/environments"
 	basePath = fmt.Sprintf("/imagespaces/%s/images", orgName)
 }
 

@@ -74,7 +74,7 @@ $ shipyardctl get deployment dep1`,
 
 		// get all of the active deployments
 		if all {
-			req, err := http.NewRequest("GET", clusterTarget + apiPath + "/environmentGroups/" + orgName + "/environments/" + envName + "/deployments" , nil)
+			req, err := http.NewRequest("GET", clusterTarget + enroberPath + "/" + envName + "/deployments" , nil)
 			if verbose {
 				PrintVerboseRequest(req)
 			}
@@ -106,7 +106,7 @@ $ shipyardctl get deployment dep1`,
 			depName = args[1]
 
 			// build API call
-			req, err := http.NewRequest("GET", clusterTarget + apiPath + "/environmentGroups/" + orgName + "/environments/" + envName + "/deployments/" + depName, nil)
+			req, err := http.NewRequest("GET", clusterTarget + enroberPath + "/" + envName + "/deployments/" + depName, nil)
 			if verbose {
 				PrintVerboseRequest(req)
 			}
@@ -159,7 +159,7 @@ $ shipyardctl delete deployment env1 dep1`,
 		depName = args[1]
 
 		// build API call URL
-		req, err := http.NewRequest("DELETE", clusterTarget + apiPath + "/environmentGroups/" + orgName + "/environments/" + envName + "/deployments/" + depName, nil)
+		req, err := http.NewRequest("DELETE", clusterTarget + enroberPath + "/" + envName + "/deployments/" + depName, nil)
 		if verbose {
 			PrintVerboseRequest(req)
 		}
@@ -223,7 +223,7 @@ $ shipyardctl create deployment env1 dep1 "test.host.name" "test.host.name" 2 "h
 		}
 
 		// build API call with request body (deployment information)
-		req, err := http.NewRequest("POST", clusterTarget + apiPath + "/environmentGroups/" + orgName + "/environments/"+envName+"/deployments", bytes.NewBuffer(js))
+		req, err := http.NewRequest("POST", clusterTarget + enroberPath + "/" + envName + "/deployments", bytes.NewBuffer(js))
 
 		if verbose {
 			PrintVerboseRequest(req)
@@ -277,7 +277,7 @@ $ shipyardctl patch deployment env1 dep1 '{"replicas": 3, "publicHosts": "test.h
 
 		// build API call
 		// the update data will come in from command line as a JSON string
-		req, err := http.NewRequest("PATCH", clusterTarget + apiPath + "/environmentGroups/" + orgName + "/environments/"+envName+"/deployments/"+depName, bytes.NewBuffer([]byte(updateData)))
+		req, err := http.NewRequest("PATCH", clusterTarget + enroberPath + "/" + envName + "/deployments/"+depName, bytes.NewBuffer([]byte(updateData)))
 
 		req.Header.Set("Authorization", "Bearer " + authToken)
 		if verbose {
