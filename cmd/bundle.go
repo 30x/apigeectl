@@ -228,4 +228,8 @@ func init() {
 	bundleCmd.Flags().StringVarP(&savePath, "save", "s", "", "Save path for proxy bundle")
 
 	fileMode = 0755
+	if orgName = os.Getenv("APIGEE_ORG"); orgName == "" {
+		fmt.Println("Missing required environment variable APIGEE_ORG")
+		os.Exit(-1)
+	}
 }

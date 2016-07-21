@@ -239,8 +239,13 @@ $ shipyardctl delete image example 1`,
 
 func init() {
 	createCmd.AddCommand(imageCmd)
-	imageCmd.Flags().StringSliceVarP(&envVars, "env", "e", []string{}, "Environment variables to set in the deployment")
+	imageCmd.Flags().StringSliceVarP(&envVars, "env", "e", []string{}, "Environment variable to set in the built image \"KEY=VAL\" ")
 	getCmd.AddCommand(getImageCmd)
 	getImageCmd.Flags().BoolVarP(&all, "all", "a", false, "Retrieve all images for an application")
 	deleteCmd.AddCommand(deleteImageCmd)
+
+	if orgName = os.Getenv("APIGEE_ORG"); orgName == "" {
+		fmt.Println("Missing required environment variable APIGEE_ORG")
+		os.Exit(-1)
+	}
 }

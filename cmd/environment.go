@@ -151,6 +151,7 @@ var createEnvCmd = &cobra.Command{
 	Short: "creates a new environment with name and hostnames",
 	Long: `An environment is created by providing an environment name, by which
 it will be identified, and a space separated list of accepted hostnames.
+The environment name must be of the form {apigee_org}-{environment_name}.
 
 Example of use:
 $ shipyardctl create environment org1-env1 "test.host.name1" "test.host.name2"`,

@@ -69,11 +69,6 @@ func init() {
 		os.Exit(-1)
 	}
 
-	if orgName = os.Getenv("APIGEE_ORG"); orgName == "" {
-		fmt.Println("Missing required environment variable APIGEE_ORG")
-		os.Exit(-1)
-	}
-
 	pubKey = os.Getenv("PUBLIC_KEY")
 	envName = os.Getenv("APIGEE_ENVIRONMENT_NAME");
 
