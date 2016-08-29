@@ -47,61 +47,37 @@ $ shipyardctl get environment org1:env1
 
 OR
 
-$ shipyardctl get environment --all --token <token>`,
+$ shipyardctl get environment org1:env1 --token <token>`,
 	Run: func(cmd *cobra.Command, args []string) {
 		RequireAuthToken()
 
-		if all {
-			req, err := http.NewRequest("GET", clusterTarget + enroberPath, nil)
-			if verbose {
-				PrintVerboseRequest(req)
-			}
+		if len(args) == 0 {
+			fmt.Println("Missing required arg <environmentName>\n")
+			fmt.Println("Usage:\n\t" + cmd.Use + "\n")
+			return
+		}
 
-			req.Header.Set("Authorization", "Bearer " + authToken)
-			response, err := http.DefaultClient.Do(req)
+		envName = args[0]
+		req, err := http.NewRequest("GET", clusterTarget + enroberPath + "/" + envName, nil)
+		if verbose {
+			PrintVerboseRequest(req)
+		}
 
-			if err != nil {
-				log.Fatal(err)
-			}
+		req.Header.Set("Authorization", "Bearer " + authToken)
+		response, err := http.DefaultClient.Do(req)
 
-			if verbose {
-				PrintVerboseResponse(response)
-			}
+		if err != nil {
+			log.Fatal(err)
+		}
 
-			defer response.Body.Close()
-			_, err = io.Copy(os.Stdout, response.Body)
-			if err != nil {
-				log.Fatal(err)
-			}
-		} else {
-			if len(args) == 0 {
-				fmt.Println("Missing required arg <environmentName>\n")
-				fmt.Println("Usage:\n\t" + cmd.Use + "\n")
-				return
-			}
+		if verbose {
+			PrintVerboseResponse(response)
+		}
 
-			envName = args[0]
-			req, err := http.NewRequest("GET", clusterTarget + enroberPath + "/" + envName, nil)
-			if verbose {
-				PrintVerboseRequest(req)
-			}
-
-			req.Header.Set("Authorization", "Bearer " + authToken)
-			response, err := http.DefaultClient.Do(req)
-
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			if verbose {
-				PrintVerboseResponse(response)
-			}
-
-			defer response.Body.Close()
-			_, err = io.Copy(os.Stdout, response.Body)
-			if err != nil {
-				log.Fatal(err)
-			}
+		defer response.Body.Close()
+		_, err = io.Copy(os.Stdout, response.Body)
+		if err != nil {
+			log.Fatal(err)
 		}
 	},
 }
@@ -266,7 +242,6 @@ $ shipyardctl patch org1:env1 "test.host.name3" "test.host.name4" --token <token
 
 func init() {
 	getCmd.AddCommand(environmentCmd)
-	environmentCmd.Flags().BoolVarP(&all, "all", "a", false, "Retrieve all environments")
 
 	deleteCmd.AddCommand(deleteEnvCmd)
 	createCmd.AddCommand(createEnvCmd)
