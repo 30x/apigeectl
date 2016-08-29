@@ -314,9 +314,65 @@ $ shipyardctl patch deployment org1:env1 dep1 '{"replicas": 3, "publicHosts": "t
 	},
 }
 
+var logsCmd = &cobra.Command{
+	Use:   "logs <environmentName> <deploymentName>",
+	Short: "retrieves an active deployment's available logs",
+	Long: `Given the name of an active deployment, this will retrieve the currently
+available logs.
+
+Example of use:
+$ shipyardctl get logs org1:env1 dep1 --token <token>`,
+	Run: func(cmd *cobra.Command, args []string) {
+		RequireAuthToken()
+
+		if len(args) == 0 {
+			fmt.Println("Missing required arg <environmentName>\n")
+			fmt.Println("Usage:\n\t" + cmd.Use + "\n")
+			return
+		}
+
+		envName = args[0]
+
+		if len(args) < 2 {
+			fmt.Println("Missing required arg <deplymentName>\n")
+			fmt.Println("Usage:\n\t" + cmd.Use + "\n")
+			return
+		}
+
+		// get deployment name from arguments
+		depName = args[1]
+
+		// build API call
+		req, err := http.NewRequest("GET", clusterTarget + enroberPath + "/" + envName + "/deployments/" + depName + "/logs", nil)
+		if verbose {
+			PrintVerboseRequest(req)
+		}
+
+		req.Header.Set("Authorization", "Bearer " + authToken)
+		response, err := http.DefaultClient.Do(req)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if verbose {
+			PrintVerboseResponse(response)
+		}
+
+		// dump response body to stdout
+		defer response.Body.Close()
+		_, err = io.Copy(os.Stdout, response.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+	},
+}
+
 func init() {
 	getCmd.AddCommand(deploymentCmd)
 	deploymentCmd.Flags().BoolVarP(&all, "all", "a", false, "Retrieve all deployments")
+
+	getCmd.AddCommand(logsCmd)
 
 	deleteCmd.AddCommand(deleteDeploymentCmd)
 	createCmd.AddCommand(createDeploymentCmd)
