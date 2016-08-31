@@ -29,6 +29,8 @@ Download the proper binary from the releases section of the repo, [here](https:/
 The list of available commands is as follows:
 ```
   ▾ shipyardctl
+    ▾ token
+        get
     ▾ image
         create
         get
@@ -54,6 +56,23 @@ All commands support verbose output with the `-v` or `--verbose` flag.
 Please also see `shipyardctl --help` for more information on the available commands and their arguments.
 
 ####Walk through
+
+**Get an Auth Token**
+```sh
+> shipyardctl get token --username orgAdmin@gmail.com
+Enter password for username 'orgAdmin@gmail.com':
+
+Enter your MFA token or just press 'enter' to skip:
+1234
+
+Copy this to your environment:
+eyJhbGciOiJSUzI1NiJ9.eyJqdGkiOiIzM2UyOGQxNi0zZGI4LTQ2MGEtYjQwMy0zZGJjOGFjM2MyZTkiLCJzdWIiOi.......
+> export APIGEE_TOKEN=eyJhbGciOiJSUzI1NiJ9.eyJqdGkiOiIzM2UyOGQxNi0zZGI4LTQ2MGEtYjQwMy0zZGJjOGFjM2MyZTkiLCJzdWIiOi....
+```
+This retrieves an Apigee authorization token based on your Apigee account credentials. Copying this value to your
+environment makes subsequent `shipyardctl` commands easier.
+
+_Note: this token expires quickly, so make sure to refresh it about every 30 minutes._
 
 **Build an image of a Node.js app**
 ```sh
