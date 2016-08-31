@@ -1,0 +1,7 @@
+package: github.com/30x/shipyardctl
+import:
+- package: github.com/spf13/cobra
+- package: github.com/howeyc/gopass
+- package: golang.org/x/crypto
+  subpackages:
+  - ssh/terminal
