@@ -38,27 +38,23 @@ type EnvironmentPatch struct {
 // environmentCmd represents the environment command
 
 var environmentCmd = &cobra.Command{
-	Use:   "environment <environmentName>",
+	Use:   "environment -o {orgName} -e {envName}",
 	Short: "retrieves either active environment information",
 	Long: `Given an environment name, this will retrieve the available information of the
 active environment(s) in JSON format. Example usage looks like:
 
-$ shipyardctl get environment org1:env1
+$ shipyardctl get environment -o org1 -e env1
 
 OR
 
-$ shipyardctl get environment org1:env1 --token <token>`,
+$ shipyardctl get environment -o org1 -e env1 --token <token>`,
 	Run: func(cmd *cobra.Command, args []string) {
+		RequireOrgName()
+		RequireEnvName()
 		RequireAuthToken()
 
-		if len(args) == 0 {
-			fmt.Println("Missing required arg <environmentName>\n")
-			fmt.Println("Usage:\n\t" + cmd.Use + "\n")
-			return
-		}
-
-		envName = args[0]
-		req, err := http.NewRequest("GET", clusterTarget + enroberPath + "/" + envName, nil)
+		name := fmt.Sprintf("%s:%s", orgName, envName)
+		req, err := http.NewRequest("GET", clusterTarget + enroberPath + "/" + name, nil)
 		if verbose {
 			PrintVerboseRequest(req)
 		}
@@ -83,23 +79,19 @@ $ shipyardctl get environment org1:env1 --token <token>`,
 }
 
 var deleteEnvCmd = &cobra.Command{
-	Use:   "environment <environmentName>",
+	Use:   "environment -o {orgName} -e {envName}",
 	Short: "deletes an active environment",
 	Long: `Given the name of an active environment, this will delete it.
 
 Example of use:
-$ shipyardctl delete environment org1:env1 --token <token>`,
+$ shipyardctl delete environment -o org1 -e env1 --token <token>`,
 	Run: func(cmd *cobra.Command, args []string) {
+		RequireOrgName()
+		RequireEnvName()
 		RequireAuthToken()
 
-		if len(args) == 0 {
-			fmt.Println("Missing required arg <environmentName>\n")
-			fmt.Println("Usage:\n\t" + cmd.Use + "\n")
-			return
-		}
-
-		envName = args[0]
-		req, err := http.NewRequest("DELETE", clusterTarget + enroberPath + "/" + envName, nil)
+		name := fmt.Sprintf("%s:%s", orgName, envName)
+		req, err := http.NewRequest("DELETE", clusterTarget + enroberPath + "/" + name, nil)
 		if verbose {
 			PrintVerboseRequest(req)
 		}
@@ -127,33 +119,28 @@ $ shipyardctl delete environment org1:env1 --token <token>`,
 }
 
 var createEnvCmd = &cobra.Command{
-	Use:   "environment <environmentName> <hostnames...>",
+	Use:   "environment -o {orgName} -e {envName} <hostnames...>",
 	Short: "creates a new environment with name and hostnames",
-	Long: `An environment is created by providing an environment name, by which
-it will be identified, and a space separated list of accepted hostnames.
-The environment name must be of the form {apigee_org}:{environment_name}.
+	Long: `An environment is created by providing an Apigee organization and environment name,
+by which it will be identified, and a space separated list of accepted hostnames.
 
 Example of use:
-$ shipyardctl create environment org1:env1 "test.host.name1" "test.host.name2" --token <token>`,
+$ shipyardctl create environment -o org1 -e env1 "test.host.name1" "test.host.name2" --token <token>`,
 	Run: func(cmd *cobra.Command, args []string) {
+		RequireOrgName()
+		RequireEnvName()
 		RequireAuthToken()
 
-		if len(args) == 0 {
-			fmt.Println("Missing required arg <environmentName>\n")
-			fmt.Println("Usage:\n\t" + cmd.Use + "\n")
-			return
-		}
+		name := fmt.Sprintf("%s:%s", orgName, envName)
 
-		envName = args[0]
-
-		if len(args) < 2 {
+		if len(args) < 1 {
 			fmt.Println("Missing required arg(s) <hostnames...>")
 			fmt.Println("Usage:\n\t" + cmd.Use + "\n")
 			return
 		}
 
-		hostnames := args[1:]
-		js, _ := json.Marshal(Environment{envName, hostnames})
+		hostnames := args[0:]
+		js, _ := json.Marshal(Environment{name, hostnames})
 
 		req, err := http.NewRequest("POST", clusterTarget + enroberPath, bytes.NewBuffer(js))
 
@@ -184,35 +171,31 @@ $ shipyardctl create environment org1:env1 "test.host.name1" "test.host.name2" -
 }
 
 var patchEnvCmd = &cobra.Command{
-	Use:   "environment <environmentName> <hostnames...>",
+	Use:   "environment -o {orgName} -e {envName} <hostnames...>",
 	Short: "update an active environment",
 	Long: `Given the name of an active environment and a space delimited
 set of hostnames, the environment will be updated. A patch of the hostnames
 will replace them entirely.
 
 Example of use:
-$ shipyardctl patch org1:env1 "test.host.name3" "test.host.name4" --token <token>`,
+$ shipyardctl patch -o org1 -e env1 "test.host.name3" "test.host.name4" --token <token>`,
 	Run: func(cmd *cobra.Command, args []string) {
+		RequireOrgName()
+		RequireEnvName()
 		RequireAuthToken()
 
-		if len(args) == 0 {
-			fmt.Println("Missing required arg <environmentName>\n")
-			fmt.Println("Usage:\n\t" + cmd.Use + "\n")
-			return
-		}
+		name := fmt.Sprintf("%s:%s", orgName, envName)
 
-		envName = args[0]
-
-		if len(args) < 2 {
+		if len(args) < 1 {
 			fmt.Println("Missing required arg(s) <hostnames...>")
 			fmt.Println("Usage:\n\t" + cmd.Use + "\n")
 			return
 		}
 
-		hostnames := args[1:]
+		hostnames := args[0:]
 		js, _ := json.Marshal(EnvironmentPatch{hostnames})
 
-		req, err := http.NewRequest("PATCH", clusterTarget + enroberPath + "/" + envName, bytes.NewBuffer(js))
+		req, err := http.NewRequest("PATCH", clusterTarget + enroberPath + "/" + name, bytes.NewBuffer(js))
 
 		if verbose {
 			PrintVerboseRequest(req)
@@ -242,8 +225,12 @@ $ shipyardctl patch org1:env1 "test.host.name3" "test.host.name4" --token <token
 
 func init() {
 	getCmd.AddCommand(environmentCmd)
+	environmentCmd.Flags().StringVarP(&envName, "env", "e", "", "Apigee environment name")
 
 	deleteCmd.AddCommand(deleteEnvCmd)
+	deleteEnvCmd.Flags().StringVarP(&envName, "env", "e", "", "Apigee environment name")
 	createCmd.AddCommand(createEnvCmd)
+	createEnvCmd.Flags().StringVarP(&envName, "env", "e", "", "Apigee environment name")
 	patchCmd.AddCommand(patchEnvCmd)
+	patchEnvCmd.Flags().StringVarP(&envName, "env", "e", "", "Apigee environment name")
 }

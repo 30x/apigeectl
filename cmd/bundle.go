@@ -219,7 +219,9 @@ func checkError(err error, customMsg string) {
 }
 
 func init() {
-	createCmd.AddCommand(bundleCmd)
+	// disable this command as we are moving some policy work into enrober
+	// thus bundle is obsolete until updated
+	// createCmd.AddCommand(bundleCmd)
 	bundleCmd.Flags().StringVarP(&savePath, "save", "s", "", "Save path for proxy bundle")
 	bundleCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee org name")
 	bundleCmd.Flags().StringVarP(&pubKey, "pubKey", "k", "", "Environment's public key")
