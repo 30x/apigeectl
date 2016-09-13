@@ -252,12 +252,9 @@ $ shipyardctl delete image example 1 --org org1 --token <token>`,
 func init() {
 	createCmd.AddCommand(imageCmd)
 	imageCmd.Flags().StringSliceVarP(&envVars, "env", "e", []string{}, "Environment variable to set in the built image \"KEY=VAL\" ")
-	imageCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee org name")
 
 	getCmd.AddCommand(getImageCmd)
-	getImageCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee org name")
 	getImageCmd.Flags().BoolVarP(&all, "all", "a", false, "Retrieve all images for an application")
 
 	deleteCmd.AddCommand(deleteImageCmd)
-	deleteImageCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee org name")
 }

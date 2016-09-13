@@ -64,5 +64,4 @@ $ shipyardctl get applications --org org1 --token <token>`,
 
 func init() {
 	getCmd.AddCommand(applicationsCmd)
-	applicationsCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee org name")
 }
