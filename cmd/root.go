@@ -21,6 +21,7 @@ import (
 	"net/http/httputil"
 
 	"github.com/spf13/cobra"
+	"github.com/30x/shipyardctl/utils"
 )
 
 var verbose bool
@@ -36,6 +37,9 @@ var enroberPath string
 var basePath string
 var pubKey string
 var envVars []string
+var sso_target string
+
+var config *utils.Config
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
@@ -60,15 +64,44 @@ func init() {
 	RootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Print environment variables used and API calls made")
 	RootCmd.PersistentFlags().StringVarP(&authToken, "token", "t", "", "Apigee auth token. Required. Or place in APIGEE_TOKEN.")
 
-	// check apigeectl required environment variables
-	if clusterTarget = os.Getenv("CLUSTER_TARGET"); clusterTarget == "" {
-		clusterTarget = "https://shipyard.apigee.com"
+	// check if there is a config file present
+	check, err := utils.ConfigExists()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(-1)
 	}
+
+	// read environment variables or use defaults
+	checkEnvironmentOrDefault()
+
+	// make a new config file because there wasn't one
+	if !check {
+		fmt.Println("No config file present. Creating one now.")
+
+		err = utils.InitNewConfigFile("default", sso_target, clusterTarget)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(-1)
+		}
+
+		fmt.Printf("Created new config file.\n\n")
+	}
+
+	// read config into memory
+	config, err = utils.LoadConfig()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(-1)
+	}
+
+	// environment overrides config, so check there first before setting vars based on config
+	checkEnvironmentOrConfig()
 
 	// Enrober API path, appended to clusterTarget before each API call
 	enroberPath = "/environments"
 }
 
+// PrintVerboseRequest used to print the request when using verbose
 func PrintVerboseRequest(req *http.Request) {
 	fmt.Println("Current environment:")
 	fmt.Println("CLUSTER_TARGET="+clusterTarget)
@@ -83,6 +116,7 @@ func PrintVerboseRequest(req *http.Request) {
 	fmt.Printf("%s\n", string(dump))
 }
 
+// PrintVerboseResponse used to print the response when using verbose
 func PrintVerboseResponse(res *http.Response) {
 	if res != nil {
 		fmt.Println("\nResponse:")
@@ -95,17 +129,58 @@ func PrintVerboseResponse(res *http.Response) {
 	}
 }
 
+func checkEnvironmentOrDefault() {
+	if sso_target = os.Getenv("SSO_LOGIN_URL"); sso_target == "" {
+		sso_target = "https://login.apigee.com"
+	}
+
+	if clusterTarget = os.Getenv("CLUSTER_TARGET"); clusterTarget == "" {
+		clusterTarget = "https://shipyard.apigee.com"
+	}
+}
+
+func checkEnvironmentOrConfig() {
+	if os.Getenv("CLUSTER_TARGET") == "" {
+		clusterTarget = config.GetCurrentClusterTarget()
+	}
+
+	if sso_target = os.Getenv("SSO_LOGIN_URL"); sso_target == "" {
+		sso_target = config.GetCurrentSSOTarget()
+	}
+}
+
+// RequireAuthToken used to load the auth token from:
+// 1. --token flag
+// 2. APIGEE_TOKEN env var
+// 3. config file
+// 4. Runs login sequence if there is no token at all
 func RequireAuthToken() {
-	if authToken == "" {
-		if authToken = os.Getenv("APIGEE_TOKEN"); authToken == "" {
-			fmt.Println("Missing required flag '--token', or place in environment as APIGEE_TOKEN.")
-			os.Exit(1)
+	if authToken == "" { // check flag first
+		if authToken = os.Getenv("APIGEE_TOKEN"); authToken == "" { // check environment second
+			if config != nil { // check config file last
+				authToken = config.GetCurrentToken()
+
+				if authToken == "" {
+					Login()
+					authToken = config.GetCurrentToken()
+				}
+
+				fmt.Println("Using auth token from config file.")
+				return
+			} else {
+				fmt.Println("No config file loaded.")
+				fmt.Println("Missing required auth token.")
+				fmt.Println("Run shipyardctl login.")
+				os.Exit(1)
+			}
 		}
 	}
 
 	return
 }
 
+// RequireOrgName used to short circuit commands
+// requiring the Apigee org name if it is not present
 func RequireOrgName() {
 	if orgName == "" {
 		if orgName = os.Getenv("APIGEE_ORG"); orgName == "" {
@@ -117,6 +192,7 @@ func RequireOrgName() {
 	return
 }
 
+// MakeBuildPath make build service path with given orgName
 func MakeBuildPath() {
 	basePath = fmt.Sprintf("/imagespaces/%s/images", orgName)
 }
