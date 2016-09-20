@@ -9,12 +9,29 @@ Download the proper binary from the releases section of the repo, [here](https:/
 
 ```sh
 > wget https://github.com/30x/shipyardctl/releases/download/v1.2.1/shipyardctl-1.2.1.darwin.amd64.go1.6.tar.gz
-> tar -xvf shipyardctl-1.2.1.darwin.amd64.go1.6.tar.gz
+> tar -xvf shipyardctl-1.3.0.darwin.amd64.go1.6.tar.gz
 > mv shipyardctl /usr/local/bin # might need sudo access
 ```
 
-###Environment
-`shipyardctl` will read from the following environment variables when their corresponding CLI flags are not proivded at runtime.
+###Configuration and Environment
+Upon first use of `shipyarctl` it will write a configuration file to `$HOME/.shipyardctl/config`. The config file looks something like this on creation:
+```yaml
+currentcontext: default
+contexts:
+- name: default
+  clusterinfo:
+    name: default
+    clustertarget: https://shipyard.apigee.com
+    ssotarget: https://login.apigee.com
+  userinfo:
+    username: ""
+    token: ""
+```
+`currentcontext`: name of the context to be referencing in `shipyardctl` use
+`contexts`: set of named contexts containing cluster information and user credentials
+_Note: The `userinfo` property of a new context will be blank until you login._
+
+**Environment**
 
 | Env Var | CLI Flag | Description |
 | ------- |:--------:| -----------:|
@@ -22,14 +39,24 @@ Download the proper binary from the releases section of the repo, [here](https:/
 |`APIGEE_ENVIRONMENT_NAME`|`--envName -e`| Your Apigee env name|
 |`APIGEE_TOKEN` |`--token -t`|Your JWT access token generated from Apigee credentials|
 |`CLUSTER_TARGET`| n/a |The _protocol_ and _hostname_ of the k8s cluster (**default:** "https://shipyard.apigee.com")|
+|`SSO_LOGIN_URL`| n/a |The _protocol_ and _hostname_ of the SSO target (**default:** "https://login.apigee.com")|
+
+**Configuration hierarchy**
+The above variables will resolve in the following order:
+* CLI Flag (when supported)
+* Enviroment variable
+* Config file
 
 ###Usage
 
 The list of available commands is as follows:
 ```
   ▾ shipyardctl
-    ▾ token
-        get
+    ▾ login
+    ▾ config
+        view
+        new-context
+        use-context
     ▾ image
         create
         get
@@ -54,22 +81,52 @@ All commands support verbose output with the `-v` or `--verbose` flag.
 
 Please also see `shipyardctl --help` for more information on the available commands and their arguments.
 
+###Managing your config file
+
+The config file shouldn't need to be changed much, unless you are developing on Shipyard or running your own cluster. Regardless, here are the available config management commands:
+
+**View**
+```sh
+> shipyarctl config view
+```
+Prints the config file to stdout.
+
+**New Context**
+```sh
+> shipyarctl config new-context "e2e" --cluster-target=https://my.e2e.shipyard.com --sso-target=https://my.apigee.sso.com
+New context e2e added!
+Please switch contexts and login.
+```
+This creates a new cluster context. As mentioned before, this is helpful when you are developing Shipyard or running a
+separate instance of Shipyard on a different cluster.
+_Note: should any of the flags shown above be excluded, the default value will be used._
+
+**Switch Context**
+```sh
+> shipyardctl config use-context "e2e"
+```
+This switches the `currentcontext` property so that all following `shipyardctl` commands reference it.
+
 ####Walk through
 
-**Get an Auth Token**
+**Login**
 ```sh
-> shipyardctl get token --username orgAdmin@gmail.com
+> shipyardctl login --username orgAdmin@gmail.com
+No config file present. Creating one now.
+Creating configuration directory at: /my/home/directory/.shipyardctl
+Creating configuration file at: /my/home/directory/.shipyardctl/config
+Created new config file.
+
 Enter password for username 'orgAdmin@gmail.com':
 
 Enter your MFA token or just press 'enter' to skip:
 1234
 
-Copy this to your environment:
-eyJhbGciOiJSUzI1NiJ9.eyJqdGkiOiIzM2UyOGQxNi0zZGI4LTQ2MGEtYjQwMy0zZGJjOGFjM2MyZTkiLCJzdWIiOi.......
-> export APIGEE_TOKEN=eyJhbGciOiJSUzI1NiJ9.eyJqdGkiOiIzM2UyOGQxNi0zZGI4LTQ2MGEtYjQwMy0zZGJjOGFjM2MyZTkiLCJzdWIiOi....
+Writing credentials to config file
+Successfully wrote credentials to /my/home/directory/.shipyardctl/config
 ```
-This retrieves an Apigee authorization token based on your Apigee account credentials. Copying this value to your
-environment makes subsequent `shipyardctl` commands easier.
+This logs you in to a `shipyardctl` session by retrieving an auth token with your Apigee credentials and saving it to a
+configuration file placed in your home directory.
 
 _Note: this token expires quickly, so make sure to refresh it about every 30 minutes._
 
