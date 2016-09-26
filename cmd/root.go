@@ -103,11 +103,31 @@ func init() {
 
 // PrintVerboseRequest used to print the request when using verbose
 func PrintVerboseRequest(req *http.Request) {
-	fmt.Println("Current environment:")
-	fmt.Println("CLUSTER_TARGET="+clusterTarget)
-	fmt.Println("APIGEE_ORG="+orgName)
+	context := config.GetCurrentContext()
+	fmt.Println("Current context:")
+	if ct := os.Getenv("CLUSTER_TARGET"); ct != "" {
+		fmt.Printf("Cluster: %s (from environment variable)\n", ct)
+	} else {
+		fmt.Printf("Cluster: %s (from config file)\n", context.ClusterInfo.Cluster)
+	}
 
-	dump, err := httputil.DumpRequestOut(req, true)
+	if st := os.Getenv("SSO_LOGIN_URL"); st != "" {
+		fmt.Printf("SSO login: %s (from environment variable)\n", st)
+	} else {
+		fmt.Printf("SSO login: %s (from config file)\n", context.ClusterInfo.SSO)
+	}
+
+	if org := os.Getenv("APIGEE_ORG"); org != "" {
+		fmt.Printf("Apigee org: %s (from environment variable)\n", org)
+	} else if orgName != "" {
+		fmt.Printf("Apigee org: %s (from CLI flag)\n", orgName)
+	}
+
+	if envName != "" {
+		fmt.Printf("Environment name: %s\n", envName)
+	}
+
+	dump, err := httputil.DumpRequestOut(req, false) // not dump req body
 	if err != nil {
 		fmt.Println("Request dump failed. Request state is unknown. Aborting.")
 		os.Exit(1)
