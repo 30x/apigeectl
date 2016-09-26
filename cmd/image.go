@@ -112,6 +112,8 @@ $ shipyardctl create image example 1 "9000:/example" "./path/to/zipped/app --org
 		defer response.Body.Close()
 		if response.StatusCode >= 200 && response.StatusCode < 300 {
 			fmt.Println("\nImage build successful\n")
+		} else {
+			CheckIfAuthn(response.StatusCode)
 		}
 
 		_, err = io.Copy(os.Stdout, response.Body)
@@ -165,6 +167,9 @@ $ shipyardctl get image example --all --org org1 --token <token>`,
 			}
 
 			defer response.Body.Close()
+
+			CheckIfAuthn(response.StatusCode)
+
 			_, err = io.Copy(os.Stdout, response.Body)
 			if err != nil {
 				log.Fatal(err)
@@ -196,6 +201,9 @@ $ shipyardctl get image example --all --org org1 --token <token>`,
 			}
 
 			defer response.Body.Close()
+
+			CheckIfAuthn(response.StatusCode)
+
 			_, err = io.Copy(os.Stdout, response.Body)
 			if err != nil {
 				log.Fatal(err)
@@ -245,6 +253,9 @@ $ shipyardctl delete image example 1 --org org1 --token <token>`,
 		}
 
 		defer response.Body.Close()
+
+		CheckIfAuthn(response.StatusCode)
+
 		_, err = io.Copy(os.Stdout, response.Body)
 		if err != nil {
 			log.Fatal(err)

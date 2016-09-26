@@ -129,6 +129,12 @@ func (c *Config) GetCurrentSSOTarget() string {
   return context.ClusterInfo.SSO
 }
 
+// GetCurrentUsername retrieves the username of the current context
+func (c *Config) GetCurrentUsername() string {
+  context := c.GetCurrentContext()
+  return context.UserInfo.Username
+}
+
 // NewContext used to create a new context
 func (c *Config) NewContext(name string, sso string, clusterTarget string) error {
   c.Contexts = append(c.Contexts, Context{name, Cluster{name, clusterTarget, sso}, User{}})

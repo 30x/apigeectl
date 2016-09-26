@@ -95,6 +95,9 @@ $ shipyardctl get deployment dep1 --token <token>`,
 			}
 
 			defer response.Body.Close()
+
+			CheckIfAuthn(response.StatusCode)
+
 			_, err = io.Copy(os.Stdout, response.Body)
 			if err != nil {
 				log.Fatal(err)
@@ -128,6 +131,9 @@ $ shipyardctl get deployment dep1 --token <token>`,
 
 			// dump response body to stdout
 			defer response.Body.Close()
+
+			CheckIfAuthn(response.StatusCode)
+
 			_, err = io.Copy(os.Stdout, response.Body)
 			if err != nil {
 				log.Fatal(err)
@@ -185,7 +191,10 @@ $ shipyardctl delete deployment org1:env1 dep1 --token <token>`,
 		defer response.Body.Close()
 		if response.StatusCode >= 200 && response.StatusCode < 300 {
 			fmt.Println("\nDeletion of " + depName + " in " + envName + " was sucessful\n")
+		} else {
+			CheckIfAuthn(response.StatusCode)
 		}
+
 		_, err = io.Copy(os.Stdout, response.Body)
 		if err != nil {
 			log.Fatal(err)
@@ -253,7 +262,10 @@ $ shipyardctl create deployment org1:env1 dep1 "test.host.name" "test.host.name"
 		defer response.Body.Close()
 		if response.StatusCode >= 200 && response.StatusCode < 300 {
 			fmt.Println("\nCreation of " + depName + " in " + envName + " was sucessful\n")
+		} else {
+			CheckIfAuthn(response.StatusCode)
 		}
+
 		_, err = io.Copy(os.Stdout, response.Body)
 		if err != nil {
 			log.Fatal(err)
@@ -308,7 +320,10 @@ $ shipyardctl patch deployment org1:env1 dep1 '{"replicas": 3, "publicHosts": "t
 		defer response.Body.Close()
 		if response.StatusCode >= 200 && response.StatusCode < 300 {
 			fmt.Println("\nPatch of " + depName + " in " + envName + " was sucessful\n")
+		} else {
+			CheckIfAuthn(response.StatusCode)
 		}
+
 		_, err = io.Copy(os.Stdout, response.Body)
 		if err != nil {
 			log.Fatal(err)
@@ -369,6 +384,9 @@ $ shipyardctl get logs org1:env1 dep1 --token <token>`,
 
 		// dump response body to stdout
 		defer response.Body.Close()
+
+		CheckIfAuthn(response.StatusCode)
+
 		_, err = io.Copy(os.Stdout, response.Body)
 		if err != nil {
 			log.Fatal(err)

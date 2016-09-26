@@ -179,6 +179,15 @@ func RequireAuthToken() {
 	return
 }
 
+// CheckIfAuthn checks if the API call was authenticated or not
+func CheckIfAuthn(status int) {
+	if status == 401 {
+		fmt.Println("Your token has expired. Please login again.")
+		fmt.Println("shipyardctl login -u", config.GetCurrentUsername())
+		os.Exit(-1)
+	}
+}
+
 // RequireOrgName used to short circuit commands
 // requiring the Apigee org name if it is not present
 func RequireOrgName() {

@@ -75,6 +75,9 @@ $ shipyardctl get environment org1:env1 --token <token>`,
 		}
 
 		defer response.Body.Close()
+
+		CheckIfAuthn(response.StatusCode)
+
 		_, err = io.Copy(os.Stdout, response.Body)
 		if err != nil {
 			log.Fatal(err)
@@ -118,7 +121,10 @@ $ shipyardctl delete environment org1:env1 --token <token>`,
 		defer response.Body.Close()
 		if response.StatusCode >= 200 && response.StatusCode < 300 {
 			fmt.Println("\nDeletion of " + envName + " was sucessful\n")
+		} else {
+			CheckIfAuthn(response.StatusCode)
 		}
+
 		_, err = io.Copy(os.Stdout, response.Body)
 		if err != nil {
 			log.Fatal(err)
@@ -175,7 +181,10 @@ $ shipyardctl create environment org1:env1 "test.host.name1" "test.host.name2" -
 		defer response.Body.Close()
 		if response.StatusCode >= 200 && response.StatusCode < 300 {
 			fmt.Println("\nCreation of " + envName + " was sucessful\n")
+		} else {
+			CheckIfAuthn(response.StatusCode)
 		}
+
 		_, err = io.Copy(os.Stdout, response.Body)
 		if err != nil {
 			log.Fatal(err)
@@ -232,6 +241,8 @@ $ shipyardctl patch org1:env1 "test.host.name3" "test.host.name4" --token <token
 		defer response.Body.Close()
 		if response.StatusCode >= 200 && response.StatusCode < 300 {
 			fmt.Println("\nPatch of " + envName + " was sucessful\n")
+		} else {
+			CheckIfAuthn(response.StatusCode)
 		}
 		_, err = io.Copy(os.Stdout, response.Body)
 		if err != nil {
