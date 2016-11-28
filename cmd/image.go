@@ -84,12 +84,6 @@ func createImage(appName string, revision string, publicPath string, zipPath str
 	}
 	_, err = io.Copy(part, zip)
 
-	if len(envVars) > 0 {
-		for i := range envVars {
-			writer.WriteField("envVar", envVars[i])
-		}
-	}
-
 	writer.WriteField("revision", revision)
 	writer.WriteField("name", appName)
 	writer.WriteField("publicPath", publicPath)
@@ -325,7 +319,6 @@ func deleteImage(appName string, revision string) int {
 
 func init() {
 	createCmd.AddCommand(imageCmd)
-	imageCmd.Flags().StringSliceVarP(&envVars, "env", "e", []string{}, "Environment variable to set in the built image \"KEY=VAL\" ")
 	imageCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee org name")
 	imageCmd.Flags().StringVarP(&nodeVersion, "node-version", "n", "4", "Node version to use in base image.")
 

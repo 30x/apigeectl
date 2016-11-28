@@ -1,5 +1,7 @@
 *.iml
 *.test
+*.tar.gz
+*.exe
 
 .classpath
 .project
