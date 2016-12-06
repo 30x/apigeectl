@@ -82,11 +82,6 @@ The list of available commands is as follows:
         delete
     ▾ applications
         get
-    ▾ environment
-        create
-        get
-        patch
-        delete
     ▾ deployment
         create
         get
@@ -173,32 +168,7 @@ and the path to your zipped Node app. If you want to bake an environment variabl
 ```
 This retrieves the available information for the image specified by the application name and revision number
 
-**4. Create a new environment**
-
-This command will create the environment that will host your deployed Node.js applications.
-
-```sh
-> shipyardctl create environment "org1:env1" "<org name>-test.apigee.net" "<org name>-prod.apigee.net"
-> export PUBLIC_KEY="<copy public key in creation response here>"
-```
-Here we create a new environment with the name "org1:env1" and the accepted hostnames of "orgName-test.apigee.net"
-and "orgName-prod.apigee.net", a space delimited list.
-
-> _Note: the naming convention used for hostnames is not strictly enforced, but will make Apigee Edge integration easier_
-
-**5. Retrieve the newly created environment by name**
-```sh
-> shipyardctl get environment "org1:env1"
-```
-Here we have retrieved the newly created environment, by name.
-
-**6. Update the environment's set of accepted hostnames**
-```sh
-> shipyardctl patch environment "org1:env1" "test.host.name3" "test.host.name4"
-```
-The environment "org1:env1" will be updated to accept traffic from the following hostnames, explicitly.
-
-**7. Create a new deployment**
+**4. Create a new deployment**
 
 This command will create the deployment artifact that is used to manage your deployed Node.js application.
 
@@ -210,19 +180,19 @@ This command will create the deployment artifact that is used to manage your dep
 This creates a new deployment within the "org1:env1" environment with the previously generated PTS URL. The number 1 represents the number
 of replicas to be made and "example" is the name of the deployment.
 
-**8. Retrieve newly created deployment by name**
+**5. Retrieve newly created deployment by name**
 ```sh
 > shipyardctl get deployment "org1:env1" "example"
 ```
 The response will include all available information on the active deployment in the given environment.
 
-**9. Check your deployment's logs**
+**6. Check your deployment's logs**
 ```sh
 > shipyardctl get logs "org1:env1" "example"
 ```
 This will dump all of the logs available from each replica belonging to the deployment.
 
-**10. Update the deployment**
+**7. Update the deployment**
 ```sh
 > shipyardctl patch deployment "org1:env1" "example" '{"replicas": 3, "publicHosts": "replacement.host.name"}'
 ```
@@ -234,7 +204,7 @@ This includes:
 - pod template spec URL
 - pod template spec
 
-**11. Create Apigee Edge Proxy bundle**
+**8. Create Apigee Edge Proxy bundle**
 ```sh
 > shipyardctl create bundle "myProxy" --save ~/Desktop
 ```
@@ -246,19 +216,13 @@ Upload this to Apigee Edge. Make sure to deploy the proxy after uploading it.
 > _entire environemnt, then make individual proxies with specific base paths **when necessary**. When you do this, make sure to also use the `--publicPath` option_
 > _in conjunction to specify the public path your deployment services. It defaults to `/`. The `publicPath` does not have to be the same as the proxy `basePath`._
 
-**12. Delete the deployment**
+**9. Delete the deployment**
 ```sh
 > shipyardctl delete deployment "org1:env1" "example"
 ```
 This deletes the named deployment.
 
-**13. Delete the environment**
-```sh
-> shipyardctl delete environment "org1:env1"
-```
-This deletes the named environment.
-
-**14. Delete the image**
+**10. Delete the image**
 ```sh
 > shipyardctl delete image "example" 1
 ```
