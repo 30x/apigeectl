@@ -39,6 +39,17 @@ var pubKey string
 var envVars []string
 var sso_target string
 
+var appName string
+var appPath string
+var runtime string
+var directory string
+var ptsUrl string
+var replicas int
+var hostnames string
+var bundlePath string
+
+var supportedRuntimes = "node"
+
 var config *utils.Config
 
 // RootCmd represents the base command when called without any subcommands
@@ -209,22 +220,4 @@ func CheckIfAuthn(status int) bool {
 	}
 
 	return true
-}
-
-// RequireOrgName used to short circuit commands
-// requiring the Apigee org name if it is not present
-func RequireOrgName() {
-	if orgName == "" {
-		if orgName = os.Getenv("APIGEE_ORG"); orgName == "" {
-			fmt.Println("Missing required flag '--org', or place in environment as APIGEE_ORG.")
-			os.Exit(1)
-		}
-	}
-
-	return
-}
-
-// MakeBuildPath make build service path with given orgName
-func MakeBuildPath() {
-	basePath = fmt.Sprintf("/imagespaces/%s/images", orgName)
 }

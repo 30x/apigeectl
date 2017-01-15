@@ -21,6 +21,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"github.com/30x/zipper"
+	"github.com/30x/shipyardctl/mgmt"
 
 	"github.com/spf13/cobra"
 )
@@ -181,6 +182,25 @@ $ shipyardctl create bundle exampleName`,
 	},
 }
 
+var deployProxyCmd = &cobra.Command{
+  Use:   "proxy",
+  Short: "deploys a given proxy bundle Edge",
+  Long: `This command consumes a Node.js application archive, deploys it to Shipyard,
+and creates an appropriate Edge proxy.
+
+$ shipyardctl deploy proxy -o acme -e test -z /path/to/bundle/zip `,
+	Run: func(cmd *cobra.Command, args []string) {
+		RequireAuthToken()
+		RequireAppName()
+		RequireOrgName()
+		RequireEnvName()
+		RequireZipPath()
+
+		err := mgmt.UploadProxyBundle(config.GetCurrentMgmtAPITarget(), orgName, envName, config.GetCurrentToken(), bundlePath, appName, verbose)
+		checkError(err, "")
+	},
+}
+
 
 func checkError(err error, customMsg string) {
 	if err != nil {
@@ -198,6 +218,12 @@ func init() {
 	bundleCmd.Flags().StringVarP(&savePath, "save", "s", "", "Save path for proxy bundle")
 	bundleCmd.Flags().StringVarP(&base, "basePath", "b", "", "Proxy base path. Defaults to /")
 	bundleCmd.Flags().StringVarP(&publicPath, "publicPath", "p", "/", "Application public path. Defaults to /")
+
+	deployCmd.AddCommand(deployProxyCmd)
+	deployProxyCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee organization name")
+	deployProxyCmd.Flags().StringVarP(&envName, "env", "e", "", "Apigee environment name")
+	deployProxyCmd.Flags().StringVarP(&appName, "name", "n", "", "name of proxy to be deployed")
+	deployProxyCmd.Flags().StringVarP(&bundlePath, "zip-path", "z", "", "path to the proxy bundle zip")
 
 	fileMode = 0755
 }

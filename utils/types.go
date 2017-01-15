@@ -18,6 +18,7 @@ type Context struct {
   Name string
   ClusterInfo Cluster
   UserInfo User
+  ProxyMgmtApi string
 }
 
 // Config shipyardctl configuration object

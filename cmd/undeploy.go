@@ -19,14 +19,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// patchCmd represents the patch command
-var patchCmd = &cobra.Command{
-	Use:   "patch [command]",
-	Short: "updates an active environment or deployment",
-	Long: `This command enables the update of certain properties of an active
-environment or deployment, based on the given name.`,
+// undeployCmd represents the undeploy command
+var undeployCmd = &cobra.Command{
+	Use:   "undeploy [command]",
+	Short: "undeploys an artifact to Shipyard or Edge",
+	Long: `This command, when paired with the proper subcommand, will undeploy the respective artifact.`,
 }
 
 func init() {
-	RootCmd.AddCommand(patchCmd)
+	RootCmd.AddCommand(undeployCmd)
 }

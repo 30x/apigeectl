@@ -22,7 +22,6 @@ import (
 	"log"
 	"encoding/json"
 	"bytes"
-	"strconv"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -35,18 +34,16 @@ type EnvVar struct {
 
 type Deployment struct {
 	DeploymentName string
-	PublicHosts string
-	PrivateHosts string
 	Replicas int64
 	PtsUrl string
 	EnvVars []EnvVar
 }
 
-type DeploymentPatch struct {
-	PublicHosts string
-	PrivateHosts string
-	Replicas int64
-	PtsUrl string
+type deploymentPatch struct {
+	PublicHosts  *string      `json:"publicHosts,omitempty"`
+	PrivateHosts *string      `json:"privateHosts,omitempty"`
+	Replicas     *int32       `json:"replicas,omitempty"`
+	PtsURL       string       `json:"ptsURL"`
 }
 
 const (
@@ -57,50 +54,39 @@ const (
 var previous bool
 
 // represents the get deployment command
-var deploymentCmd = &cobra.Command{
-	Use:   "deployment <environmentName> <deploymentName>",
+var getDeploymentCmd = &cobra.Command{
+	Use:   "deployment -o {org} -e {env} -n {name}",
 	Short: "retrieves an active deployment's available information'",
 	Long: `Given the name of an active deployment, this will retrieve the currently
 available information in JSON format.
 
 Example of use:
-$ shipyardctl get deployment dep1 --token <token>`,
+$ shipyardctl get deployment -o acme -e test -n example`,
 	Run: func(cmd *cobra.Command, args []string) {
 		RequireAuthToken()
+		RequireAppName()
+		RequireOrgName()
+		RequireEnvName()
 
-		if len(args) == 0 {
-			fmt.Println("Missing required arg <environmentName>\n")
-			fmt.Println("Usage:\n\t" + cmd.Use + "\n")
-			return
-		}
-
-		envName = args[0]
+		shipyardEnv := orgName+":"+envName
 
 		// get all of the active deployments
 		if all {
-			status := getDeploymentAll(envName)
+			status := getDeploymentAll(shipyardEnv)
 			if !CheckIfAuthn(status) {
 				// retry once more
-				status := getDeploymentAll(envName)
+				status := getDeploymentAll(shipyardEnv)
 				if status == 401 {
 					fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
 					fmt.Println("Command failed.")
 				}
 			}
 		} else { // get active deployment by name
-			if len(args) < 2 {
-				fmt.Println("Missing required arg <deplymentName>\n")
-				fmt.Println("Usage:\n\t" + cmd.Use + "\n")
-				return
-			}
 
-			// get deployment name from arguments
-			depName = args[1]
-
-			status := getDeploymentNamed(envName, depName)
+			status := getDeploymentNamed(shipyardEnv, appName)
 			if !CheckIfAuthn(status) {
 				// retry once more
-				status := getDeploymentNamed(envName, depName)
+				status := getDeploymentNamed(shipyardEnv, appName)
 				if status == 401 {
 					fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
 					fmt.Println("Command failed.")
@@ -170,38 +156,26 @@ func getDeploymentAll(envName string) int {
 		return response.StatusCode
 }
 
-var deleteDeploymentCmd = &cobra.Command{
-	Use:   "deployment <environmentName> <deploymentName>",
-	Short: "deletes an active deployment",
+var undeployApplicationCmd = &cobra.Command{
+	Use:   "application --name {name} --org {org} --env {env}",
+	Short: "undeploys an active deployment",
 	Long: `Given the name of an active deployment and the environment it belongs to,
-this will delete it.
+this will undeploy it.
 
 Example of use:
-$ shipyardctl delete deployment org1:env1 dep1 --token <token>`,
+$ shipyardctl undeploy application -n example -o acme -e test`,
 	Run: func(cmd *cobra.Command, args []string) {
 		RequireAuthToken()
+		RequireAppName()
+		RequireOrgName()
+		RequireEnvName()
 
-		// check and pull required arguments
-		if len(args) == 0 {
-			fmt.Println("Missing required arg <environmentName>\n")
-			fmt.Println("Usage:\n\t" + cmd.Use + "\n")
-			return
-		}
+		shipyardEnv := orgName+":"+envName
 
-		envName = args[0]
-
-		if len(args) < 2 {
-			fmt.Println("Missing required arg <deplymentName>\n")
-			fmt.Println("Usage:\n\t" + cmd.Use + "\n")
-			return
-		}
-
-		depName = args[1]
-
-		status := deleteDeployment(envName, depName)
+		status := undeployApplication(shipyardEnv, appName)
 		if !CheckIfAuthn(status) {
 			// retry once more
-			status := deleteDeployment(envName, depName)
+			status := undeployApplication(shipyardEnv, appName)
 			if status == 401 {
 				fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
 				fmt.Println("Command failed.")
@@ -210,7 +184,7 @@ $ shipyardctl delete deployment org1:env1 dep1 --token <token>`,
 	},
 }
 
-func deleteDeployment(envName string, depName string) int {
+func undeployApplication(envName string, depName string) int {
 	// build API call URL
 	req, err := http.NewRequest("DELETE", clusterTarget + enroberPath + "/" + envName + "/deployments/" + depName, nil)
 	if verbose {
@@ -231,7 +205,7 @@ func deleteDeployment(envName string, depName string) int {
 	// dump response body to stdout
 	defer response.Body.Close()
 	if response.StatusCode >= 200 && response.StatusCode < 300 {
-		fmt.Println("\nDeletion of " + depName + " in " + envName + " was successful\n")
+		fmt.Println("\nUndeployment of " + depName + " in " + envName + " was successful\n")
 	}
 
 	if response.StatusCode != 401 {
@@ -245,40 +219,29 @@ func deleteDeployment(envName string, depName string) int {
 }
 
 // deployment creation command
-var createDeploymentCmd = &cobra.Command{
-	Use:   "deployment <environmentName> <depName> <publicHost> <privateHost> <replicas> <ptsUrl>",
+var deployApplicationCmd = &cobra.Command{
+	Use:   "application -o {org} -e {env} -n {name} --pts-url {ptsUrl}",
 	Short: "creates a new deployment in the given environment with given name",
-	Long: `A deployment requires a name, accepted public and private hosts, the number
-of replicas and the URL that locates the appropriate Pod Template Spec built by Shipyard.
-It also requires an active environment to deploy to.
+	Long: `A deployment requires a name, the number of replicas and the URL that locates
+the appropriate Pod Template Spec imported to Shipyard.
 
 Example of use:
-$ shipyardctl create deployment org1:env1 dep1 "test.host.name" "test.host.name" 2 "https://pts.url.com" --token <token>`,
+$ shipyardctl deploy application -o acme -e test -n example --pts-url "https://pts.url.com"`,
 	Run: func(cmd *cobra.Command, args []string) {
 		RequireAuthToken()
+		RequireAppName()
+		RequireOrgName()
+		RequireEnvName()
+		RequirePTSURL()
 
-		// check and pull required args
-		if len(args) < 6 {
-			fmt.Println("Missing required args\n")
-			fmt.Println("Usage:\n\t" + cmd.Use + "\n")
-			return
-		}
-
-		envName = args[0]
-		depName = args[1]
-		publicHost := args[2]
-		privateHost := args[3]
-		replicas, err := strconv.ParseInt(args[4], 0, 64)
-		if err != nil {
-			log.Fatal(err)
-		}
-		ptsUrl := args[5]
 		vars := parseEnvVars()
+		shipyardEnv := orgName+":"+envName
+		replicas64 := int64(replicas)
 
-		status := createDeployment(envName, depName, publicHost, privateHost, replicas, ptsUrl, vars)
+		status := deployApplication(shipyardEnv, appName, replicas64, ptsUrl, vars)
 		if !CheckIfAuthn(status) {
 			// retry once more
-			status := createDeployment(envName, depName, publicHost, privateHost, replicas, ptsUrl, vars)
+			status := deployApplication(envName, appName, replicas64, ptsUrl, vars)
 			if status == 401 {
 				fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
 				fmt.Println("Command failed.")
@@ -287,9 +250,9 @@ $ shipyardctl create deployment org1:env1 dep1 "test.host.name" "test.host.name"
 	},
 }
 
-func createDeployment(envName string, depName string, publicHost string, privateHost string, replicas int64, ptsUrl string, vars []EnvVar) int {
+func deployApplication(envName string, depName string, replicas int64, ptsUrl string, vars []EnvVar) int {
 	// prepare arguments in a Deployment struct and Marshal into JSON
-	js, err := json.Marshal(Deployment{depName, publicHost, privateHost, replicas, ptsUrl, vars})
+	js, err := json.Marshal(Deployment{depName, replicas, ptsUrl, vars})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -330,33 +293,39 @@ func createDeployment(envName string, depName string, publicHost string, private
 }
 
 // patch/update deployment command
-var patchDeploymentCmd = &cobra.Command{
-	Use:   "deployment <environmentName> <depName> <updateData>",
+var updateDeploymentCmd = &cobra.Command{
+	Use:   "deployment -o {org} -e {env} -n {name} --replicas {num}",
 	Short: "updates an active deployment",
 	Long: `Once deployed, a deployment can be updated by passing a JSON object
 with the corresponding mutations. All properties, except for the deployment name are mutable.
 That includes, the public or private hosts, replicas, PTS URL entirely, or the PTS itself.
 
 Example of use:
-$ shipyardctl patch deployment org1:env1 dep1 '{"replicas": 3, "publicHosts": "test.host.name.patch"}' --token <token>`,
+$ shipyardctl update deployment shipyardctl update deployment --org acme --env test --name example --replicas 4`,
 	Run: func(cmd *cobra.Command, args []string) {
 		RequireAuthToken()
+		RequireAppName()
+		RequireOrgName()
+		RequireEnvName()
 
-		// check and pull required args
-		if len(args) < 3 {
-			fmt.Println("Missing required args\n")
-			fmt.Println("Usage:\n\t" + cmd.Use + "\n")
+		shipyardEnv := orgName+":"+envName
+		if replicas == -1 && ptsUrl == "" {
+			fmt.Println("Nothing to update. Ending.")
 			return
 		}
 
-		envName = args[0]
-		depName = args[1]
-		updateData := args[2]
+		updateData := deploymentPatch{}
+		updateData.PtsURL = ptsUrl
 
-		status := patchDeployment(envName, depName, updateData)
+		if replicas != -1 {
+			replicas32 := int32(replicas)
+			updateData.Replicas = &replicas32
+		}
+
+		status := updateDeployment(shipyardEnv, appName, updateData)
 		if !CheckIfAuthn(status) {
 			// retry once more
-			status := patchDeployment(envName, depName, updateData)
+			status := updateDeployment(shipyardEnv, depName, updateData)
 			if status == 401 {
 				fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
 				fmt.Println("Command failed.")
@@ -365,10 +334,13 @@ $ shipyardctl patch deployment org1:env1 dep1 '{"replicas": 3, "publicHosts": "t
 	},
 }
 
-func patchDeployment(envName string, depName string, updateData string) int {
-	// build API call
-	// the update data will come in from command line as a JSON string
-	req, err := http.NewRequest("PATCH", clusterTarget + enroberPath + "/" + envName + "/deployments/"+depName, bytes.NewBuffer([]byte(updateData)))
+func updateDeployment(envName string, depName string, updateData deploymentPatch) int {
+	data, err := json.Marshal(updateData)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	req, err := http.NewRequest("PATCH", clusterTarget + enroberPath + "/" + envName + "/deployments/"+depName, bytes.NewBuffer(data))
 
 	req.Header.Set("Authorization", "Bearer " + authToken)
 	if verbose {
@@ -402,37 +374,25 @@ func patchDeployment(envName string, depName string, updateData string) int {
 }
 
 var logsCmd = &cobra.Command{
-	Use:   "logs <environmentName> <deploymentName>",
+	Use:   "logs -o {org} -e {env} -n {name}",
 	Short: "retrieves an active deployment's available logs",
 	Long: `Given the name of an active deployment, this will retrieve the currently
 available logs.
 
 Example of use:
-$ shipyardctl get logs org1:env1 dep1 --token <token>`,
+$ shipyardctl get logs -o acme -e test -n example`,
 	Run: func(cmd *cobra.Command, args []string) {
 		RequireAuthToken()
+		RequireOrgName()
+		RequireEnvName()
+		RequireAppName()
 
-		if len(args) == 0 {
-			fmt.Println("Missing required arg <environmentName>\n")
-			fmt.Println("Usage:\n\t" + cmd.Use + "\n")
-			return
-		}
+		shipyardEnv := orgName+":"+envName
 
-		envName = args[0]
-
-		if len(args) < 2 {
-			fmt.Println("Missing required arg <deplymentName>\n")
-			fmt.Println("Usage:\n\t" + cmd.Use + "\n")
-			return
-		}
-
-		// get deployment name from arguments
-		depName = args[1]
-
-		status := getDeploymentLogs(envName, depName)
+		status := getDeploymentLogs(shipyardEnv, appName)
 		if !CheckIfAuthn(status) {
 			// retry once more
-			status := getDeploymentLogs(envName, depName)
+			status := getDeploymentLogs(shipyardEnv, appName)
 			if status == 401 {
 				fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
 				fmt.Println("Command failed.")
@@ -479,16 +439,37 @@ func getDeploymentLogs(envName string, depName string) int {
 }
 
 func init() {
-	getCmd.AddCommand(deploymentCmd)
-	deploymentCmd.Flags().BoolVarP(&all, "all", "a", false, "Retrieve all deployments")
+	getCmd.AddCommand(getDeploymentCmd)
+	getDeploymentCmd.Flags().BoolVarP(&all, "all", "a", false, "Retrieve all deployments")
+	getDeploymentCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee organization name")
+	getDeploymentCmd.Flags().StringVarP(&envName, "env", "e", "", "Apigee environment name")
+	getDeploymentCmd.Flags().StringVarP(&appName, "name", "n", "", "name of application deployment to retrieve")
 
 	getCmd.AddCommand(logsCmd)
 	logsCmd.Flags().BoolVarP(&previous, "previous", "p", false, "used to retrieve previous container's logs")
+	logsCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee organization name")
+	logsCmd.Flags().StringVarP(&envName, "env", "e", "", "Apigee environment name")
+	logsCmd.Flags().StringVarP(&appName, "name", "n", "", "name of application deployment to retrieve logs from")
 
-	deleteCmd.AddCommand(deleteDeploymentCmd)
-	createCmd.AddCommand(createDeploymentCmd)
-	createDeploymentCmd.Flags().StringSliceVarP(&envVars, "env", "e", []string{}, "Environment variables to set in the deployment")
-	patchCmd.AddCommand(patchDeploymentCmd)
+	undeployCmd.AddCommand(undeployApplicationCmd)
+	undeployApplicationCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee organization name")
+	undeployApplicationCmd.Flags().StringVarP(&envName, "env", "e", "", "Apigee environment name")
+	undeployApplicationCmd.Flags().StringVarP(&appName, "name", "n", "", "name of application deployment to undeploy")
+
+	deployCmd.AddCommand(deployApplicationCmd)
+	deployApplicationCmd.Flags().StringSliceVar(&envVars, "env-var", []string{}, "Environment variables to set in the deployment")
+	deployApplicationCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee organization name")
+	deployApplicationCmd.Flags().StringVarP(&envName, "env", "e", "", "Apigee environment name")
+	deployApplicationCmd.Flags().StringVarP(&appName, "name", "n", "", "name of application deployment to deploy")
+	deployApplicationCmd.Flags().StringVarP(&ptsUrl, "pts-url", "p", "", "URL of the Pod Template Spec given by import")
+	deployApplicationCmd.Flags().IntVarP(&replicas, "replicas", "r", -1, "Number of application replicas to deploy")
+
+	updateCmd.AddCommand(updateDeploymentCmd)
+	updateDeploymentCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee organization name")
+	updateDeploymentCmd.Flags().StringVarP(&envName, "env", "e", "", "Apigee environment name")
+	updateDeploymentCmd.Flags().StringVarP(&appName, "name", "n", "", "name of application deployment to deploy")
+	updateDeploymentCmd.Flags().IntVarP(&replicas, "replicas", "r", -1, "number of replicas to scale to")
+	updateDeploymentCmd.Flags().StringVarP(&ptsUrl, "pts-url", "p", "", "URL of the Pod Template Spec to update with")
 }
 
 func parseEnvVars() (parsed []EnvVar) {

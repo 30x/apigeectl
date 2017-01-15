@@ -22,6 +22,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -31,37 +32,33 @@ type Environment struct {
 	HostNames []string
 }
 
-type EnvironmentPatch struct {
+type EnvironmentUpdate struct {
 	HostNames []string
 }
 
 // environmentCmd represents the environment command
 
 var environmentCmd = &cobra.Command{
-	Use:   "environment <environmentName>",
+	Use:   "environment -o {org} -e {env}",
 	Short: "retrieves either active environment information",
 	Long: `Given an environment name, this will retrieve the available information of the
 active environment(s) in JSON format. Example usage looks like:
 
-$ shipyardctl get environment org1:env1
+$ shipyardctl get environment -o acme -e test
 
 OR
 
 $ shipyardctl get environment org1:env1 --token <token>`,
 	Run: func(cmd *cobra.Command, args []string) {
 		RequireAuthToken()
+		RequireOrgName()
+		RequireEnvName()
 
-		if len(args) == 0 {
-			fmt.Println("Missing required arg <environmentName>\n")
-			fmt.Println("Usage:\n\t" + cmd.Use + "\n")
-			return
-		}
-
-		envName = args[0]
-		status := getEnvironment(envName)
+		shipyardEnv := orgName+":"+envName
+		status := getEnvironment(shipyardEnv)
 		if !CheckIfAuthn(status) {
 			// retry once more
-			status := getEnvironment(envName)
+			status := getEnvironment(shipyardEnv)
 			if status == 401 {
 				fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
 				fmt.Println("Command failed.")
@@ -99,173 +96,26 @@ func getEnvironment(envName string) int {
 	return response.StatusCode
 }
 
-var deleteEnvCmd = &cobra.Command{
-	Use:   "environment <environmentName>",
-	Short: "deletes an active environment",
-	Long: `Given the name of an active environment, this will delete it.
-
-Example of use:
-$ shipyardctl delete environment org1:env1 --token <token>`,
-	Run: func(cmd *cobra.Command, args []string) {
-		RequireAuthToken()
-
-		if len(args) == 0 {
-			fmt.Println("Missing required arg <environmentName>\n")
-			fmt.Println("Usage:\n\t" + cmd.Use + "\n")
-			return
-		}
-
-		envName = args[0]
-		status := deleteEnv(envName)
-		if !CheckIfAuthn(status) {
-			// retry once more
-			status := deleteEnv(envName)
-			if status == 401 {
-				fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
-				fmt.Println("Command failed.")
-			}
-		}
-	},
-}
-
-func deleteEnv(envName string) int {
-	req, err := http.NewRequest("DELETE", clusterTarget + enroberPath + "/" + envName, nil)
-	if verbose {
-		PrintVerboseRequest(req)
-	}
-
-	req.Header.Set("Authorization", "Bearer " + authToken)
-	response, err := http.DefaultClient.Do(req)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if verbose {
-			PrintVerboseResponse(response)
-		}
-
-	defer response.Body.Close()
-	if response.StatusCode >= 200 && response.StatusCode < 300 {
-		fmt.Println("\nDeletion of " + envName + " was successful\n")
-	}
-
-	if response.StatusCode != 401 {
-		_, err = io.Copy(os.Stdout, response.Body)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	return response.StatusCode
-}
-
-var createEnvCmd = &cobra.Command{
-	Use:   "environment <environmentName> <hostnames...>",
-	Short: "creates a new environment with name and hostnames",
-	Long: `An environment is created by providing an environment name, by which
-it will be identified, and a space separated list of accepted hostnames.
-The environment name must be of the form {apigee_org}:{environment_name}.
-
-Example of use:
-$ shipyardctl create environment org1:env1 "test.host.name1" "test.host.name2" --token <token>`,
-	Run: func(cmd *cobra.Command, args []string) {
-		RequireAuthToken()
-
-		if len(args) == 0 {
-			fmt.Println("Missing required arg <environmentName>\n")
-			fmt.Println("Usage:\n\t" + cmd.Use + "\n")
-			return
-		}
-
-		envName = args[0]
-
-		if len(args) < 2 {
-			fmt.Println("Missing required arg(s) <hostnames...>")
-			fmt.Println("Usage:\n\t" + cmd.Use + "\n")
-			return
-		}
-
-		hostnames := args[1:]
-
-		status := createEnv(envName, hostnames)
-		if !CheckIfAuthn(status) {
-			// retry once more
-			status := createEnv(envName, hostnames)
-			if status == 401 {
-				fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
-				fmt.Println("Command failed.")
-			}
-		}
-	},
-}
-
-func createEnv(envName string, hostnames []string) int {
-	js, _ := json.Marshal(Environment{envName, hostnames})
-
-	req, err := http.NewRequest("POST", clusterTarget + enroberPath, bytes.NewBuffer(js))
-
-	if verbose {
-		PrintVerboseRequest(req)
-	}
-
-	req.Header.Set("Authorization", "Bearer " + authToken)
-	response, err := http.DefaultClient.Do(req)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if verbose {
-		PrintVerboseResponse(response)
-	}
-
-	defer response.Body.Close()
-	if response.StatusCode >= 200 && response.StatusCode < 300 {
-		fmt.Println("\nCreation of " + envName + " was successful\n")
-	}
-
-	if response.StatusCode != 401 {
-		_, err = io.Copy(os.Stdout, response.Body)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	return response.StatusCode
-}
-
-var patchEnvCmd = &cobra.Command{
-	Use:   "environment <environmentName> <hostnames...>",
+var updateEnvCmd = &cobra.Command{
+	Use:   "environment -o {org} -e {env}",
 	Short: "update an active environment",
 	Long: `Given the name of an active environment and a space delimited
-set of hostnames, the environment will be updated. A patch of the hostnames
+set of hostnames, the environment will be updated. A update of the hostnames
 will replace them entirely.
 
 Example of use:
-$ shipyardctl patch org1:env1 "test.host.name3" "test.host.name4" --token <token>`,
+$ shipyardctl update -o acme -e test --hostnames="test.host.name3,test.host.name1"`,
 	Run: func(cmd *cobra.Command, args []string) {
 		RequireAuthToken()
+		RequireOrgName()
+		RequireEnvName()
+		RequireHostnames()
 
-		if len(args) == 0 {
-			fmt.Println("Missing required arg <environmentName>\n")
-			fmt.Println("Usage:\n\t" + cmd.Use + "\n")
-			return
-		}
-
-		envName = args[0]
-
-		if len(args) < 2 {
-			fmt.Println("Missing required arg(s) <hostnames...>")
-			fmt.Println("Usage:\n\t" + cmd.Use + "\n")
-			return
-		}
-
-		hostnames := args[1:]
-		status := patchEnv(envName, hostnames)
+		shipyardEnv := orgName+":"+envName
+		status := updateEnv(shipyardEnv, strings.Split(hostnames, ","))
 		if !CheckIfAuthn(status) {
 			// retry once more
-			status := patchEnv(envName, hostnames)
+			status := updateEnv(shipyardEnv, strings.Split(hostnames, ","))
 			if status == 401 {
 				fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
 				fmt.Println("Command failed.")
@@ -274,8 +124,8 @@ $ shipyardctl patch org1:env1 "test.host.name3" "test.host.name4" --token <token
 	},
 }
 
-func patchEnv(envName string, hostnames []string) int {
-	js, _ := json.Marshal(EnvironmentPatch{hostnames})
+func updateEnv(envName string, hostnames []string) int {
+	js, _ := json.Marshal(EnvironmentUpdate{hostnames})
 
 	req, err := http.NewRequest("PATCH", clusterTarget + enroberPath + "/" + envName, bytes.NewBuffer(js))
 
@@ -311,8 +161,11 @@ func patchEnv(envName string, hostnames []string) int {
 
 func init() {
 	getCmd.AddCommand(environmentCmd)
+	environmentCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee organization name")
+	environmentCmd.Flags().StringVarP(&envName, "env", "e", "", "Apigee environment name")
 
-	deleteCmd.AddCommand(deleteEnvCmd)
-	createCmd.AddCommand(createEnvCmd)
-	patchCmd.AddCommand(patchEnvCmd)
+	updateCmd.AddCommand(updateEnvCmd)
+	updateEnvCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee organization name")
+	updateEnvCmd.Flags().StringVarP(&envName, "env", "e", "", "Apigee environment name")
+	updateEnvCmd.Flags().StringVarP(&hostnames, "hostnames", "s", "", "Accepted hostnames for the environment")
 }

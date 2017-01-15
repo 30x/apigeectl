@@ -56,6 +56,7 @@ contexts:
   userinfo:
     username: ""
     token: "" # APIGEE_TOKEN
+  proxymgmtapi: https://api.enterprise.apigee.com
 ```
 `currentcontext`: name of the context to be referencing in `shipyardctl` use
 `contexts`: set of named contexts containing cluster information and user credentials
@@ -72,28 +73,31 @@ The list of available commands is as follows:
 ```
   ▾ shipyardctl
     ▾ login
+    ▾ version
     ▾ config
         view
         new-context
         use-context
-    ▾ image
-        create
-        get
-        delete
-    ▾ applications
-        get
-    ▾ environment
-        create
-        get
-        patch
-        delete
-    ▾ deployment
-        create
-        get
-        patch
-        delete
-    ▾ bundle
-        create
+    ▾ create
+        bundle
+    ▾ delete
+        application
+    ▾ deploy
+        applicationp=
+        proxy
+    ▾ undeploy
+        application
+    ▾ get
+        applications
+        deployment
+        environment
+        logs
+        status
+    ▾ import
+        application
+    ▾ update
+        environment
+        deployment
 ```
 
 All commands support verbose output with the `-v` or `--verbose` flag.
@@ -151,90 +155,70 @@ configuration file placed in your home directory.
 
 > _Note: this token expires quickly, so every dependant command will prompt you to refresh your login and rety the command, when necessary._
 
-**2. Build an image of a Node.js app**
+**2. Import an Node.js application source code**
 
-This command consumes the Node.js application zip, builds it into an image, stores the image and provides the URL to retrieve its spec.
+This command consumes the Node.js application zip, stores the application revions and provides the URL to retrieve its spec.
 
 ```sh
-> shipyardctl create image "example" 1 "9000:/example" "./example-app.zip"
+> shipyardctl import application --name "echo-app1[:1]" --path "9000:/echo-app" --directory "./example.zip" --org acme --runtime node:4
 > export PTS_URL="<copy the Pod Template Spec URL generated and output by the build image command>"
 ```
 The build command takes the name of your application, the revision number, the public port/path to reach your application
-and the path to your zipped Node app. If you want to bake an environment variable into the image, provide them individually with `--env-var=MY_VAR=VALUE`. These values can be overwritten by specifying a variable with the same name but different value when deploying the image (covered further down).
-
-**This command defaults to using Node.js LTS (v4) unless otherwise specified with the `--node-version` flag.**
-**A list of available versions can be found [here](https://github.com/mhart/alpine-node#minimal-nodejs-docker-images-18mb-or-67mb-compressed). Provide the desired image tag as the `--node-version`.**
+and the path to your zipped Node app.
 
 > _Note: there must be a valid package.json in the root of zipped application_
 
 **3. Verify image creation**
 ```sh
-> shipyardctl get image example 1
+> shipyardctl get applications --org acme
 ```
-This retrieves the available information for the image specified by the application name and revision number
+This retrieves all of the imported applications into an appspace.
 
-**4. Create a new environment**
-
-This command will create the environment that will host your deployed Node.js applications.
-
+**4. Retrieve your Shipyard environment**
 ```sh
-> shipyardctl create environment "org1:env1" "<org name>-test.apigee.net" "<org name>-prod.apigee.net"
-> export PUBLIC_KEY="<copy public key in creation response here>"
+> shipyardctl get environment --org acme --env test
 ```
-Here we create a new environment with the name "org1:env1" and the accepted hostnames of "orgName-test.apigee.net"
-and "orgName-prod.apigee.net", a space delimited list.
+Here we have retrieved the environment, by Apigee org & env name.
 
-> _Note: the naming convention used for hostnames is not strictly enforced, but will make Apigee Edge integration easier_
-
-**5. Retrieve the newly created environment by name**
+**5. Update the environment's set of accepted hostnames**
 ```sh
-> shipyardctl get environment "org1:env1"
+> shipyardctl update environment --org acme --env test "test.host.name3"
 ```
-Here we have retrieved the newly created environment, by name.
+The environment "acme-test" will be updated to accept traffic from the following hostnames, explicitly.
 
-**6. Update the environment's set of accepted hostnames**
-```sh
-> shipyardctl patch environment "org1:env1" "test.host.name3" "test.host.name4"
-```
-The environment "org1:env1" will be updated to accept traffic from the following hostnames, explicitly.
+**6. Create a new deployment**
 
-**7. Create a new deployment**
-
-This command will create the deployment artifact that is used to manage your deployed Node.js application.
+This command will create the deployment artifact that is used to manage your deployed application.
 
 ```sh
 > export PUBLIC_HOST "$APIGEE_ORG-$APIGEE_ENVIRONMENT_NAME.apigee.net"
 > export PRIVATE_HOST "$APIGEE_ORG-$APIGEE_ENVIRONMENT_NAME.apigee.net"
-> shipyardctl create deployment "org1:env1" "example" $PUBLIC_HOST $PRIVATE_HOST 1 $PTS_URL --env "NAME1=VALUE1" -e "NAME2=VALUE2"
+> shipyardctl deploy application -o acme -e test -n example --pts-url "https://pts.url.com"
 ```
-This creates a new deployment within the "org1:env1" environment with the previously generated PTS URL. The number 1 represents the number
-of replicas to be made and "example" is the name of the deployment.
+This creates a new deployment within the "acme-test" environment with the imported application spec provided by the PTS URL.
 
-**8. Retrieve newly created deployment by name**
+**7. Retrieve newly created deployment by name**
 ```sh
-> shipyardctl get deployment "org1:env1" "example"
+> shipyardctl get deployment --org acme --env test --name example
 ```
 The response will include all available information on the active deployment in the given environment.
 
-**9. Check your deployment's logs**
+**8. Check your deployment's logs**
 ```sh
-> shipyardctl get logs "org1:env1" "example"
+> shipyardctl get logs -o acme -e test -n example
 ```
-This will dump all of the logs available from each replica belonging to the deployment.
+This will dump all of the logs available from each replica belonging to the named deployment.
 
-**10. Update the deployment**
+**9. Update the deployment**
 ```sh
-> shipyardctl patch deployment "org1:env1" "example" '{"replicas": 3, "publicHosts": "replacement.host.name"}'
+> shipyardctl update deployment --org acme --env test --name example --replicas 4
 ```
-Updating a deployment by name, in a given environment, takes a JSON string that includes the properties to be changed.
+Updating a deployment by name, in a given environment, with the flags of the properties to be changed.
 This includes:
 - number of replicas
-- public host
-- private host
 - pod template spec URL
-- pod template spec
 
-**11. Create Apigee Edge Proxy bundle**
+**10. Create Apigee Edge Proxy bundle**
 ```sh
 > shipyardctl create bundle "myProxy" --save ~/Desktop
 ```
@@ -246,20 +230,14 @@ Upload this to Apigee Edge. Make sure to deploy the proxy after uploading it.
 > _entire environemnt, then make individual proxies with specific base paths **when necessary**. When you do this, make sure to also use the `--publicPath` option_
 > _in conjunction to specify the public path your deployment services. It defaults to `/`. The `publicPath` does not have to be the same as the proxy `basePath`._
 
-**12. Delete the deployment**
+**11. Undeploy an application deployment**
 ```sh
-> shipyardctl delete deployment "org1:env1" "example"
+> shipyardctl undeploy application -n example -o acme -e test
 ```
-This deletes the named deployment.
+This undeploys the named deployment.
 
-**13. Delete the environment**
+**14. Delete the application import**
 ```sh
-> shipyardctl delete environment "org1:env1"
+> shipyardctl delete application -n example:1 --org org1
 ```
-This deletes the named environment.
-
-**14. Delete the image**
-```sh
-> shipyardctl delete image "example" 1
-```
-This deletes the built application image, specified by the given app name and reivsion number.
+This deletes the imported application, specified by the given app name and optional reivsion number.

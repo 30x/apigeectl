@@ -11,6 +11,7 @@ import (
 
 var cluster string
 var sso string
+var mgmtAPI string
 
 var useContextCmd = &cobra.Command{
 	Use:   "use-context",
@@ -64,7 +65,7 @@ $ shipyardctl config new-context e2e`,
     if config == nil { // no config file
       fmt.Println("There is no config file present at:", utils.GetConfigPath())
     } else { // switch the current context to give name
-      err := config.NewContext(contextName, sso, cluster)
+      err := config.NewContext(contextName, sso, cluster, mgmtAPI)
       if err != nil {
         fmt.Println(err)
         os.Exit(-1)
@@ -120,5 +121,6 @@ func init() {
   ConfigCmd.AddCommand(newContextCmd)
   newContextCmd.Flags().StringVarP(&cluster, "cluster-target", "c", "https://shipyard.apigee.com", "Indicates the URL of the target cluster")
   newContextCmd.Flags().StringVarP(&sso, "sso-target", "s", "https://login.apigee.com", "Indicates the URL of the SSO target")
+  newContextCmd.Flags().StringVarP(&mgmtAPI, "mgmt-api", "m", utils.DefaultMgmtApi, "The proxy management API target")
   RootCmd.AddCommand(ConfigCmd)
 }
