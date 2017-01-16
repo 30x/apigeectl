@@ -49,11 +49,22 @@ $ shipyardctl get environment -o acme -e test
 OR
 
 $ shipyardctl get environment org1:env1 --token <token>`,
-	Run: func(cmd *cobra.Command, args []string) {
-		RequireAuthToken()
-		RequireOrgName()
-		RequireEnvName()
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		if err := RequireAuthToken(); err != nil {
+			return err
+		}
 
+		if err := RequireEnvName(); err != nil {
+			return err
+		}
+
+		if err := RequireOrgName(); err != nil {
+			return err
+		}
+
+		return nil
+	},
+	Run: func(cmd *cobra.Command, args []string) {
 		shipyardEnv := orgName+":"+envName
 		status := getEnvironment(shipyardEnv)
 		if !CheckIfAuthn(status) {
@@ -105,12 +116,26 @@ will replace them entirely.
 
 Example of use:
 $ shipyardctl update -o acme -e test --hostnames="test.host.name3,test.host.name1"`,
-	Run: func(cmd *cobra.Command, args []string) {
-		RequireAuthToken()
-		RequireOrgName()
-		RequireEnvName()
-		RequireHostnames()
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		if err := RequireAuthToken(); err != nil {
+			return err
+		}
 
+		if err := RequireEnvName(); err != nil {
+			return err
+		}
+
+		if err := RequireOrgName(); err != nil {
+			return err
+		}
+
+		if err := RequireHostnames(); err != nil {
+			return err
+		}
+
+		return nil
+	},
+	Run: func(cmd *cobra.Command, args []string) {
 		shipyardEnv := orgName+":"+envName
 		status := updateEnv(shipyardEnv, strings.Split(hostnames, ","))
 		if !CheckIfAuthn(status) {

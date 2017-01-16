@@ -8,94 +8,96 @@ import (
 
 // RequireOrgName used to short circuit commands
 // requiring the Apigee org name if it is not present
-func RequireOrgName() {
+func RequireOrgName() error {
 	if orgName == "" {
 		if orgName = os.Getenv("APIGEE_ORG"); orgName == "" {
-			fmt.Println("Missing required flag '--org', or place in environment as APIGEE_ORG.")
-			os.Exit(1)
+			return fmt.Errorf("Missing required flag '--org', or place in environment as APIGEE_ORG.")
 		}
 	}
 
-	return
+	return nil
 }
 
 // RequireEnvName used to short circuit commands
 // requiring the Apigee env name if it is not present
-func RequireEnvName() {
+func RequireEnvName() error {
 	if envName == "" {
 		if envName = os.Getenv("APIGEE_ENV"); envName == "" {
-			fmt.Println("Missing required flag '--env', or place in environment as APIGEE_ENV.")
-			os.Exit(1)
+			return fmt.Errorf("Missing required flag '--env', or place in environment as APIGEE_ENV.")
 		}
 	}
 
-	return
+	return nil
 }
 
 // RequireAppName used to short circuit commands
 // requiring the app name if it is not present
-func RequireAppName() {
+func RequireAppName() error {
 	if appName == "" {
-		fmt.Println("Missing required flag '--name'.")
-		os.Exit(1)
+		return fmt.Errorf("Missing required flag '--name'.")
 	}
 
-	return
+	return nil
 }
 
 // RequireAppPath used to short circuit commands
 // requiring the app path if it is not present
-func RequireAppPath() {
+func RequireAppPath() error {
 	if appPath == "" {
-		fmt.Println("Missing required flag '--path'.")
-		os.Exit(1)
+		return fmt.Errorf("Missing required flag '--path'.")
 	}
 
-	return
+	return nil
+}
+
+// RequireBundleName used to short circuit commands
+// requiring the bundle name be provided via the name flag
+func RequireBundleName() error {
+	if bundleName == "" {
+		return fmt.Errorf("Missing required flag '--name'.")
+	}
+
+	return nil
 }
 
 // RequireDirectory used to short circuit commands
 // requiring a directory, if it is not present
-func RequireDirectory() {
+func RequireDirectory() error {
 	if directory == "" {
-		fmt.Println("Missing required flag '--directory'.")
-		os.Exit(1)
+		return fmt.Errorf("Missing required flag '--directory'.")
 	}
 
-	return
+	return nil
 }
 
 // RequirePTSURL used to short circuit commands
 // requiring a PTS URL, if it is not present
-func RequirePTSURL() {
+func RequirePTSURL() error {
 	if ptsUrl == "" {
-		fmt.Println("Missing required flag '--pts-url'.")
-		os.Exit(1)
+		return fmt.Errorf("Missing required flag '--pts-url'.")
 	}
 
-	return
+	return nil
 }
 
 // RequireHostnames used to short circuit commands
 // requiring hostnames, if it is not present
-func RequireHostnames() {
+func RequireHostnames() error {
 	if hostnames == "" {
-		fmt.Println("Missing required flag '--hostnames'.")
-		os.Exit(1)
+		return fmt.Errorf("Missing required flag '--hostnames'.")
 	}
 
-	return
+	return nil
 }
 
 // RequireZipPath used to short circuit commands
 // requiring the path to a bundle zip, if it is not present
-func RequireZipPath() {
+func RequireZipPath() error {
 	if bundlePath == "" {
-		fmt.Println("Missing required flag '--zip-path'.")
-		os.Exit(1)
+		return fmt.Errorf("Missing required flag '--zip-path'.")
 	}
 
-	return
+	return nil
 }
 
 // MakeBuildPath make build service path with given orgName

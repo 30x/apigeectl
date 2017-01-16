@@ -39,23 +39,22 @@ var fileMode os.FileMode
 
 // bundleCmd represents the bundle command
 var bundleCmd = &cobra.Command{
-	Use:   "bundle <name>",
+	Use:   "bundle --name {bundleName}",
 	Short: "generate an Edge proxy bundle",
 	Long: `This generates the appropriate API proxy bundle for an
 environment built and deployed on Shipyard.
 
 Example of use:
 
-$ shipyardctl create bundle exampleName`,
+$ shipyardctl create bundle -n exampleName`,
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+    if err := RequireBundleName(); err != nil {
+      return err
+    }
+
+    return nil
+  },
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) < 1 {
-			fmt.Println("Missing required arg.")
-			fmt.Println("Usage:\t\n"+cmd.Use)
-			return
-		}
-
-		name := args[0]
-
 		// make a temp dir
 		tmpdir, err := ioutil.TempDir("", orgName+"_"+envName)
 		if err != nil {
@@ -104,15 +103,15 @@ $ shipyardctl create bundle exampleName`,
 			base = publicPath
 		}
 
-		bundle := Bundle{name, base, publicPath}
+		bundle := Bundle{bundleName, base, publicPath}
 
 		// example.xml --> ./apiproxy/
-		proxy_xml, err := os.Create(filepath.Join(dir, name+".xml"))
+		proxy_xml, err := os.Create(filepath.Join(dir, bundleName+".xml"))
 		err = proxy_xml.Chmod(fileMode)
 		if verbose {
-			fmt.Println("Creating file '"+name+".xml'")
+			fmt.Println("Creating file '"+bundleName+".xml'")
 		}
-		checkError(err, "Unable to make "+name+".xml file")
+		checkError(err, "Unable to make "+bundleName+".xml file")
 
 		proxyTmpl, err := template.New("PROXY").Parse(PROXY_XML)
 		if err != nil { panic(err) }
@@ -156,20 +155,20 @@ $ shipyardctl create bundle exampleName`,
 		err = targetEndpoint.Execute(target_default_xml, bundle)
 		if err != nil { panic(err) }
 
-		zipDir := filepath.Join(tmpdir, name+".zip")
+		zipDir := filepath.Join(tmpdir, bundleName+".zip")
 		err = zipper.Archive(dir, zipDir)
 		if err != nil { panic(err) }
 
 		// move zip to designated savePath
 		if savePath != "" {
-			err = os.Rename(zipDir, filepath.Join(savePath, name+".zip"))
+			err = os.Rename(zipDir, filepath.Join(savePath, bundleName+".zip"))
 			if verbose {
 				fmt.Println("Moving proxy folder to "+savePath)
 			}
 			checkError(err, "Unable to move apiproxy to target save directory")
 		} else { // move apiproxy from tmpdir to cwd
 			cwd, err := os.Getwd()
-			err = os.Rename(zipDir, filepath.Join(cwd, name+".zip"))
+			err = os.Rename(zipDir, filepath.Join(cwd, bundleName+".zip"))
 			if verbose {
 				fmt.Println("Moving proxy folder to CWD")
 			}
@@ -189,13 +188,30 @@ var deployProxyCmd = &cobra.Command{
 and creates an appropriate Edge proxy.
 
 $ shipyardctl deploy proxy -o acme -e test -z /path/to/bundle/zip `,
-	Run: func(cmd *cobra.Command, args []string) {
-		RequireAuthToken()
-		RequireAppName()
-		RequireOrgName()
-		RequireEnvName()
-		RequireZipPath()
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		if err := RequireAuthToken(); err != nil {
+			return err
+		}
 
+		if err := RequireAppName(); err != nil {
+			return err
+		}
+
+		if err := RequireOrgName(); err != nil {
+			return err
+		}
+
+		if err := RequireEnvName(); err != nil {
+			return err
+		}
+
+		if err := RequireZipPath(); err != nil {
+			return err
+		}
+
+		return nil
+	},
+	Run: func(cmd *cobra.Command, args []string) {
 		err := mgmt.UploadProxyBundle(config.GetCurrentMgmtAPITarget(), orgName, envName, config.GetCurrentToken(), bundlePath, appName, verbose)
 		checkError(err, "")
 	},
@@ -215,6 +231,7 @@ func checkError(err error, customMsg string) {
 
 func init() {
 	createCmd.AddCommand(bundleCmd)
+	bundleCmd.Flags().StringVarP(&bundleName, "name", "n", "", "Proxy bundle name")
 	bundleCmd.Flags().StringVarP(&savePath, "save", "s", "", "Save path for proxy bundle")
 	bundleCmd.Flags().StringVarP(&base, "basePath", "b", "", "Proxy base path. Defaults to /")
 	bundleCmd.Flags().StringVarP(&publicPath, "publicPath", "p", "/", "Application public path. Defaults to /")

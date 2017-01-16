@@ -62,12 +62,26 @@ available information in JSON format.
 
 Example of use:
 $ shipyardctl get deployment -o acme -e test -n example`,
-	Run: func(cmd *cobra.Command, args []string) {
-		RequireAuthToken()
-		RequireAppName()
-		RequireOrgName()
-		RequireEnvName()
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		if err := RequireAuthToken(); err != nil {
+			return err
+		}
 
+		if err := RequireAppName(); err != nil {
+			return err
+		}
+
+		if err := RequireOrgName(); err != nil {
+			return err
+		}
+
+		if err := RequireEnvName(); err != nil {
+			return err
+		}
+
+		return nil
+	},
+	Run: func(cmd *cobra.Command, args []string) {
 		shipyardEnv := orgName+":"+envName
 
 		// get all of the active deployments
@@ -164,12 +178,26 @@ this will undeploy it.
 
 Example of use:
 $ shipyardctl undeploy application -n example -o acme -e test`,
-	Run: func(cmd *cobra.Command, args []string) {
-		RequireAuthToken()
-		RequireAppName()
-		RequireOrgName()
-		RequireEnvName()
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		if err := RequireAuthToken(); err != nil {
+			return err
+		}
 
+		if err := RequireAppName(); err != nil {
+			return err
+		}
+
+		if err := RequireOrgName(); err != nil {
+			return err
+		}
+
+		if err := RequireEnvName(); err != nil {
+			return err
+		}
+
+		return nil
+	},
+	Run: func(cmd *cobra.Command, args []string) {
 		shipyardEnv := orgName+":"+envName
 
 		status := undeployApplication(shipyardEnv, appName)
@@ -227,13 +255,30 @@ the appropriate Pod Template Spec imported to Shipyard.
 
 Example of use:
 $ shipyardctl deploy application -o acme -e test -n example --pts-url "https://pts.url.com"`,
-	Run: func(cmd *cobra.Command, args []string) {
-		RequireAuthToken()
-		RequireAppName()
-		RequireOrgName()
-		RequireEnvName()
-		RequirePTSURL()
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		if err := RequireAuthToken(); err != nil {
+			return err
+		}
 
+		if err := RequireAppName(); err != nil {
+			return err
+		}
+
+		if err := RequireOrgName(); err != nil {
+			return err
+		}
+
+		if err := RequireEnvName(); err != nil {
+			return err
+		}
+
+		if err := RequirePTSURL(); err != nil {
+			return err
+		}
+
+		return nil
+	},
+	Run: func(cmd *cobra.Command, args []string) {
 		vars := parseEnvVars()
 		shipyardEnv := orgName+":"+envName
 		replicas64 := int64(replicas)
@@ -302,12 +347,26 @@ That includes, the public or private hosts, replicas, PTS URL entirely, or the P
 
 Example of use:
 $ shipyardctl update deployment shipyardctl update deployment --org acme --env test --name example --replicas 4`,
-	Run: func(cmd *cobra.Command, args []string) {
-		RequireAuthToken()
-		RequireAppName()
-		RequireOrgName()
-		RequireEnvName()
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		if err := RequireAuthToken(); err != nil {
+			return err
+		}
 
+		if err := RequireAppName(); err != nil {
+			return err
+		}
+
+		if err := RequireOrgName(); err != nil {
+			return err
+		}
+
+		if err := RequireEnvName(); err != nil {
+			return err
+		}
+
+		return nil
+	},
+	Run: func(cmd *cobra.Command, args []string) {
 		shipyardEnv := orgName+":"+envName
 		if replicas == -1 && ptsUrl == "" {
 			fmt.Println("Nothing to update. Ending.")
@@ -381,12 +440,26 @@ available logs.
 
 Example of use:
 $ shipyardctl get logs -o acme -e test -n example`,
-	Run: func(cmd *cobra.Command, args []string) {
-		RequireAuthToken()
-		RequireOrgName()
-		RequireEnvName()
-		RequireAppName()
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		if err := RequireAuthToken(); err != nil {
+			return err
+		}
 
+		if err := RequireAppName(); err != nil {
+			return err
+		}
+
+		if err := RequireOrgName(); err != nil {
+			return err
+		}
+
+		if err := RequireEnvName(); err != nil {
+			return err
+		}
+
+		return nil
+	},
+	Run: func(cmd *cobra.Command, args []string) {
 		shipyardEnv := orgName+":"+envName
 
 		status := getDeploymentLogs(shipyardEnv, appName)

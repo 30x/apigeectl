@@ -40,11 +40,20 @@ returning all available information.
 Example of use:
 
 $ shipyardctl get application --org org1`,
-	Run: func(cmd *cobra.Command, args []string) {
-		RequireAuthToken()
-		RequireOrgName()
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		if err := RequireAuthToken(); err != nil {
+			return err
+		}
+
+		if err := RequireOrgName(); err != nil {
+			return err
+		}
+
 		MakeBuildPath()
 
+		return nil
+	},
+	Run: func(cmd *cobra.Command, args []string) {
 		status := getApplications()
 		if !CheckIfAuthn(status) {
 			// retry once more
@@ -97,14 +106,32 @@ Within the project zip, there must be a valid package.json.
 Example of use:
 
 $ shipyardctl import application --name "echo-app1[:1]" --path "9000:/echo-app" --directory . --org acme --runtime node:4`,
-	Run: func(cmd *cobra.Command, args []string) {
-		RequireAuthToken()
-		RequireOrgName()
-		RequireAppName()
-		RequireAppPath()
-		RequireDirectory()
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		if err := RequireAuthToken(); err != nil {
+			return err
+		}
+
+		if err := RequireAppName(); err != nil {
+			return err
+		}
+
+		if err := RequireOrgName(); err != nil {
+			return err
+		}
+
+		if err := RequireAppPath(); err != nil {
+			return err
+		}
+
+		if err := RequireDirectory(); err != nil {
+			return err
+		}
+
 		MakeBuildPath()
 
+		return nil
+	},
+	Run: func(cmd *cobra.Command, args []string) {
 		status := importApp(appName, appPath, directory)
 		if !CheckIfAuthn(status) {
 			// retry once more
@@ -214,12 +241,24 @@ The application must've be imported by a successful 'shipyardctl import applicat
 Example of use:
 
 $ shipyardctl delete application -n example:1 --org org1`,
-	Run: func(cmd *cobra.Command, args []string) {
-		RequireAuthToken()
-		RequireOrgName()
-		RequireAppName()
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		if err := RequireAuthToken(); err != nil {
+			return err
+		}
+
+		if err := RequireAppName(); err != nil {
+			return err
+		}
+
+		if err := RequireOrgName(); err != nil {
+			return err
+		}
+
 		MakeBuildPath()
 
+		return nil
+	},
+	Run: func(cmd *cobra.Command, args []string) {
 		nameSplit := strings.Split(appName, ":")
 		if len(nameSplit) < 2 {
 			fmt.Println("Application revision required")

@@ -47,6 +47,7 @@ var ptsUrl string
 var replicas int
 var hostnames string
 var bundlePath string
+var bundleName string
 
 var supportedRuntimes = "node"
 
@@ -185,7 +186,7 @@ func checkEnvironmentOrConfig() {
 // 2. APIGEE_TOKEN env var
 // 3. config file
 // 4. Runs login sequence if there is no token at all
-func RequireAuthToken() {
+func RequireAuthToken() error {
 	if authToken == "" { // check flag first
 		if authToken = os.Getenv("APIGEE_TOKEN"); authToken == "" { // check environment second
 			if config != nil { // check config file last
@@ -196,17 +197,14 @@ func RequireAuthToken() {
 					authToken = config.GetCurrentToken()
 				}
 
-				return
+				return nil
 			} else {
-				fmt.Println("No config file loaded.")
-				fmt.Println("Missing required auth token.")
-				fmt.Println("Run shipyardctl login.")
-				os.Exit(1)
+				return fmt.Errorf("No config file loaded.\nMissing required auth token.\nRun shipyardctl login.")
 			}
 		}
 	}
 
-	return
+	return nil
 }
 
 // CheckIfAuthn checks if the API call was authenticated or not
