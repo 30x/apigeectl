@@ -16,12 +16,12 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"net/http"
 	"net/http/httputil"
+	"os"
 
-	"github.com/spf13/cobra"
 	"github.com/30x/shipyardctl/utils"
+	"github.com/spf13/cobra"
 )
 
 var verbose bool
@@ -44,7 +44,8 @@ var appPath string
 var runtime string
 var directory string
 var ptsUrl string
-var replicas int
+var replicasUpdate int
+var replicasDeploy int
 var hostnames string
 var bundlePath string
 var bundleName string

@@ -15,39 +15,41 @@
 package cmd
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
-	"net/http"
-	"os"
 	"io"
 	"log"
-	"encoding/json"
-	"bytes"
+	"net/http"
+	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
 )
 
 type EnvVar struct {
-	Name string
+	Name  string
 	Value string
 }
 
 type Deployment struct {
 	DeploymentName string
-	Replicas int64
-	PtsUrl string
-	EnvVars []EnvVar
+	Replicas       int64
+	PtsUrl         string
+	EnvVars        []EnvVar
+	PublicHosts    string
+	PrivateHosts   string
 }
 
 type deploymentPatch struct {
-	PublicHosts  *string      `json:"publicHosts,omitempty"`
-	PrivateHosts *string      `json:"privateHosts,omitempty"`
-	Replicas     *int32       `json:"replicas,omitempty"`
-	PtsURL       string       `json:"ptsURL"`
+	PublicHosts  *string `json:"publicHosts,omitempty"`
+	PrivateHosts *string `json:"privateHosts,omitempty"`
+	Replicas     *int32  `json:"replicas,omitempty"`
+	PtsURL       string  `json:"ptsURL"`
 }
 
 const (
-	NAME = 0
+	NAME  = 0
 	VALUE = 1
 )
 
@@ -82,7 +84,7 @@ $ shipyardctl get deployment -o acme -e test -n example`,
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		shipyardEnv := orgName+":"+envName
+		shipyardEnv := orgName + ":" + envName
 
 		// get all of the active deployments
 		if all {
@@ -112,12 +114,12 @@ $ shipyardctl get deployment -o acme -e test -n example`,
 
 func getDeploymentNamed(envName string, depName string) int {
 	// build API call
-	req, err := http.NewRequest("GET", clusterTarget + enroberPath + "/" + envName + "/deployments/" + depName, nil)
+	req, err := http.NewRequest("GET", clusterTarget+enroberPath+"/"+envName+"/deployments/"+depName, nil)
 	if verbose {
 		PrintVerboseRequest(req)
 	}
 
-	req.Header.Set("Authorization", "Bearer " + authToken)
+	req.Header.Set("Authorization", "Bearer "+authToken)
 	response, err := http.DefaultClient.Do(req)
 
 	if err != nil {
@@ -142,32 +144,32 @@ func getDeploymentNamed(envName string, depName string) int {
 }
 
 func getDeploymentAll(envName string) int {
-	req, err := http.NewRequest("GET", clusterTarget + enroberPath + "/" + envName + "/deployments" , nil)
-		if verbose {
-			PrintVerboseRequest(req)
-		}
+	req, err := http.NewRequest("GET", clusterTarget+enroberPath+"/"+envName+"/deployments", nil)
+	if verbose {
+		PrintVerboseRequest(req)
+	}
 
-		req.Header.Set("Authorization", "Bearer " + authToken)
-		response, err := http.DefaultClient.Do(req)
+	req.Header.Set("Authorization", "Bearer "+authToken)
+	response, err := http.DefaultClient.Do(req)
 
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if verbose {
+		PrintVerboseResponse(response)
+	}
+
+	defer response.Body.Close()
+
+	if response.StatusCode != 401 {
+		_, err = io.Copy(os.Stdout, response.Body)
 		if err != nil {
 			log.Fatal(err)
 		}
+	}
 
-		if verbose {
-			PrintVerboseResponse(response)
-		}
-
-		defer response.Body.Close()
-
-		if response.StatusCode != 401 {
-			_, err = io.Copy(os.Stdout, response.Body)
-			if err != nil {
-				log.Fatal(err)
-			}
-		}
-
-		return response.StatusCode
+	return response.StatusCode
 }
 
 var undeployApplicationCmd = &cobra.Command{
@@ -198,7 +200,7 @@ $ shipyardctl undeploy application -n example -o acme -e test`,
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		shipyardEnv := orgName+":"+envName
+		shipyardEnv := orgName + ":" + envName
 
 		status := undeployApplication(shipyardEnv, appName)
 		if !CheckIfAuthn(status) {
@@ -214,12 +216,12 @@ $ shipyardctl undeploy application -n example -o acme -e test`,
 
 func undeployApplication(envName string, depName string) int {
 	// build API call URL
-	req, err := http.NewRequest("DELETE", clusterTarget + enroberPath + "/" + envName + "/deployments/" + depName, nil)
+	req, err := http.NewRequest("DELETE", clusterTarget+enroberPath+"/"+envName+"/deployments/"+depName, nil)
 	if verbose {
 		PrintVerboseRequest(req)
 	}
 
-	req.Header.Set("Authorization", "Bearer " + authToken)
+	req.Header.Set("Authorization", "Bearer "+authToken)
 	response, err := http.DefaultClient.Do(req)
 
 	if err != nil {
@@ -280,8 +282,8 @@ $ shipyardctl deploy application -o acme -e test -n example --pts-url "https://p
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		vars := parseEnvVars()
-		shipyardEnv := orgName+":"+envName
-		replicas64 := int64(replicas)
+		shipyardEnv := orgName + ":" + envName
+		replicas64 := int64(replicasDeploy)
 
 		status := deployApplication(shipyardEnv, appName, replicas64, ptsUrl, vars)
 		if !CheckIfAuthn(status) {
@@ -297,19 +299,19 @@ $ shipyardctl deploy application -o acme -e test -n example --pts-url "https://p
 
 func deployApplication(envName string, depName string, replicas int64, ptsUrl string, vars []EnvVar) int {
 	// prepare arguments in a Deployment struct and Marshal into JSON
-	js, err := json.Marshal(Deployment{depName, replicas, ptsUrl, vars})
+	js, err := json.Marshal(Deployment{depName, replicas, ptsUrl, vars, hostnames, hostnames})
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// build API call with request body (deployment information)
-	req, err := http.NewRequest("POST", clusterTarget + enroberPath + "/" + envName + "/deployments", bytes.NewBuffer(js))
+	req, err := http.NewRequest("POST", clusterTarget+enroberPath+"/"+envName+"/deployments", bytes.NewBuffer(js))
 
 	if verbose {
 		PrintVerboseRequest(req)
 	}
 
-	req.Header.Set("Authorization", "Bearer " + authToken)
+	req.Header.Set("Authorization", "Bearer "+authToken)
 	req.Header.Set("Content-Type", "application/json")
 	response, err := http.DefaultClient.Do(req)
 
@@ -367,8 +369,8 @@ $ shipyardctl update deployment shipyardctl update deployment --org acme --env t
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		shipyardEnv := orgName+":"+envName
-		if replicas == -1 && ptsUrl == "" {
+		shipyardEnv := orgName + ":" + envName
+		if replicasUpdate == -1 && ptsUrl == "" {
 			fmt.Println("Nothing to update. Ending.")
 			return
 		}
@@ -376,8 +378,8 @@ $ shipyardctl update deployment shipyardctl update deployment --org acme --env t
 		updateData := deploymentPatch{}
 		updateData.PtsURL = ptsUrl
 
-		if replicas != -1 {
-			replicas32 := int32(replicas)
+		if replicasUpdate != -1 {
+			replicas32 := int32(replicasUpdate)
 			updateData.Replicas = &replicas32
 		}
 
@@ -399,9 +401,9 @@ func updateDeployment(envName string, depName string, updateData deploymentPatch
 		log.Fatal(err)
 	}
 
-	req, err := http.NewRequest("PATCH", clusterTarget + enroberPath + "/" + envName + "/deployments/"+depName, bytes.NewBuffer(data))
+	req, err := http.NewRequest("PATCH", clusterTarget+enroberPath+"/"+envName+"/deployments/"+depName, bytes.NewBuffer(data))
 
-	req.Header.Set("Authorization", "Bearer " + authToken)
+	req.Header.Set("Authorization", "Bearer "+authToken)
 	if verbose {
 		PrintVerboseRequest(req)
 	}
@@ -460,7 +462,7 @@ $ shipyardctl get logs -o acme -e test -n example`,
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		shipyardEnv := orgName+":"+envName
+		shipyardEnv := orgName + ":" + envName
 
 		status := getDeploymentLogs(shipyardEnv, appName)
 		if !CheckIfAuthn(status) {
@@ -479,15 +481,15 @@ func getDeploymentLogs(envName string, depName string) int {
 	var err error
 	// build API call
 	if previous {
-		req, err = http.NewRequest("GET", clusterTarget + enroberPath + "/" + envName + "/deployments/" + depName + "/logs?previous=true", nil)
+		req, err = http.NewRequest("GET", clusterTarget+enroberPath+"/"+envName+"/deployments/"+depName+"/logs?previous=true", nil)
 	} else {
-		req, err = http.NewRequest("GET", clusterTarget + enroberPath + "/" + envName + "/deployments/" + depName + "/logs", nil)
+		req, err = http.NewRequest("GET", clusterTarget+enroberPath+"/"+envName+"/deployments/"+depName+"/logs", nil)
 	}
 	if verbose {
 		PrintVerboseRequest(req)
 	}
 
-	req.Header.Set("Authorization", "Bearer " + authToken)
+	req.Header.Set("Authorization", "Bearer "+authToken)
 	response, err := http.DefaultClient.Do(req)
 
 	if err != nil {
@@ -535,13 +537,14 @@ func init() {
 	deployApplicationCmd.Flags().StringVarP(&envName, "env", "e", "", "Apigee environment name")
 	deployApplicationCmd.Flags().StringVarP(&appName, "name", "n", "", "name of application deployment to deploy")
 	deployApplicationCmd.Flags().StringVarP(&ptsUrl, "pts-url", "p", "", "URL of the Pod Template Spec given by import")
-	deployApplicationCmd.Flags().IntVarP(&replicas, "replicas", "r", -1, "Number of application replicas to deploy")
+	deployApplicationCmd.Flags().IntVarP(&replicasDeploy, "replicas", "r", 1, "Number of application replicas to deploy")
+	deployApplicationCmd.Flags().StringVarP(&hostnames, "hostnames", "s", "", "Accepted hostnames for the deployment")
 
 	updateCmd.AddCommand(updateDeploymentCmd)
 	updateDeploymentCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee organization name")
 	updateDeploymentCmd.Flags().StringVarP(&envName, "env", "e", "", "Apigee environment name")
 	updateDeploymentCmd.Flags().StringVarP(&appName, "name", "n", "", "name of application deployment to deploy")
-	updateDeploymentCmd.Flags().IntVarP(&replicas, "replicas", "r", -1, "number of replicas to scale to")
+	updateDeploymentCmd.Flags().IntVarP(&replicasUpdate, "replicas", "r", -1, "number of replicas to scale to")
 	updateDeploymentCmd.Flags().StringVarP(&ptsUrl, "pts-url", "p", "", "URL of the Pod Template Spec to update with")
 }
 
