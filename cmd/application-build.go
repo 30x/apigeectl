@@ -15,23 +15,23 @@
 package cmd
 
 import (
-	"net/http"
-	"io"
-	"os"
-	"log"
-	"strings"
 	"bytes"
-	"mime/multipart"
-	"path/filepath"
 	"fmt"
+	"io"
+	"log"
+	"mime/multipart"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
 
 var nodeLTS = "4"
 
-// getApplicationCmd represents the application command
-var getApplicationCmd = &cobra.Command{
+// getApplicationsCmd represents the application command
+var getApplicationsCmd = &cobra.Command{
 	Use:   "applications",
 	Short: "retrieve all applications in a appspace",
 	Long: `This retrieves all of the applications in the configured appspace,
@@ -67,12 +67,89 @@ $ shipyardctl get application --org org1`,
 }
 
 func getApplications() int {
-	req, err := http.NewRequest("GET", clusterTarget + basePath, nil)
+	req, err := http.NewRequest("GET", clusterTarget+basePath, nil)
 	if verbose {
 		PrintVerboseRequest(req)
 	}
 
-	req.Header.Set("Authorization", "Bearer " + authToken)
+	req.Header.Set("Authorization", "Bearer "+authToken)
+	response, err := http.DefaultClient.Do(req)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if verbose {
+		PrintVerboseResponse(response)
+	}
+
+	defer response.Body.Close()
+	if response.StatusCode != 401 {
+		_, err = io.Copy(os.Stdout, response.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	return response.StatusCode
+}
+
+// getApplicationCmd represents the application command
+var getApplicationCmd = &cobra.Command{
+	Use:   "application -n {name} -o {org}",
+	Short: "retrieve all revisions of named application in a appspace",
+	Long: `This retrieves all of the revisions of the named application in the configured appspace.
+
+Example of use:
+
+$ shipyardctl get application --org org1 --name exampleApp`,
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		if err := RequireAuthToken(); err != nil {
+			return err
+		}
+
+		if err := RequireOrgName(); err != nil {
+			return err
+		}
+
+		if err := RequireAppName(); err != nil {
+			return err
+		}
+
+		MakeBuildPath()
+
+		return nil
+	},
+	Run: func(cmd *cobra.Command, args []string) {
+		status := getApplication(appName, orgName)
+		if !CheckIfAuthn(status) {
+			// retry once more
+			status := getApplication(appName, orgName)
+			if status == 401 {
+				fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
+				fmt.Println("Command failed.")
+			}
+		}
+	},
+}
+
+func getApplication(name string, appspace string) int {
+	nameSplit := strings.Split(name, ":")
+
+	var req *http.Request
+	var err error
+
+	if len(nameSplit) > 1 {
+		req, err = http.NewRequest("GET", clusterTarget+basePath+"/"+nameSplit[0]+"/version/"+nameSplit[1], nil)
+	} else {
+		req, err = http.NewRequest("GET", clusterTarget+basePath+"/"+nameSplit[0], nil)
+	}
+
+	if verbose {
+		PrintVerboseRequest(req)
+	}
+
+	req.Header.Set("Authorization", "Bearer "+authToken)
 	response, err := http.DefaultClient.Do(req)
 
 	if err != nil {
@@ -194,7 +271,7 @@ func importApp(appName string, appPath string, zipPath string) int {
 		log.Fatal(err)
 	}
 
-	req, err := http.NewRequest("POST", clusterTarget + basePath, body)
+	req, err := http.NewRequest("POST", clusterTarget+basePath, body)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -203,7 +280,7 @@ func importApp(appName string, appPath string, zipPath string) int {
 		PrintVerboseRequest(req)
 	}
 
-	req.Header.Set("Authorization", "Bearer " + authToken)
+	req.Header.Set("Authorization", "Bearer "+authToken)
 	req.Header.Add("Content-Type", writer.FormDataContentType())
 	response, err := http.DefaultClient.Do(req)
 
@@ -278,12 +355,12 @@ $ shipyardctl delete application -n example:1 --org org1`,
 }
 
 func deleteApp(appName string, revision string) int {
-	req, err := http.NewRequest("DELETE", clusterTarget + basePath + "/" + appName + "/version/"+revision, nil)
+	req, err := http.NewRequest("DELETE", clusterTarget+basePath+"/"+appName+"/version/"+revision, nil)
 	if verbose {
 		PrintVerboseRequest(req)
 	}
 
-	req.Header.Set("Authorization", "Bearer " + authToken)
+	req.Header.Set("Authorization", "Bearer "+authToken)
 	response, err := http.DefaultClient.Do(req)
 
 	if err != nil {
@@ -311,8 +388,12 @@ func deleteApp(appName string, revision string) int {
 }
 
 func init() {
+	getCmd.AddCommand(getApplicationsCmd)
+	getApplicationsCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee org name")
+
 	getCmd.AddCommand(getApplicationCmd)
 	getApplicationCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee org name")
+	getApplicationCmd.Flags().StringVarP(&appName, "name", "n", "", "application name to retrieve and optional revision, ex. my-app[:4]")
 
 	importCmd.AddCommand(importAppCmd)
 	importAppCmd.Flags().StringSliceVar(&envVars, "env-var", []string{}, "Environment variable to set in the built image \"KEY=VAL\" ")
