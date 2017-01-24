@@ -45,7 +45,6 @@ var runtime string
 var directory string
 var ptsUrl string
 var replicasUpdate int
-var hostnames string
 var bundlePath string
 var bundleName string
 

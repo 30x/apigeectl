@@ -16,25 +16,13 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"io"
-	"os"
-	"bytes"
-	"encoding/json"
+	"log"
 	"net/http"
-	"strings"
+	"os"
 
 	"github.com/spf13/cobra"
 )
-
-type Environment struct {
-	EnvironmentName string
-	HostNames []string
-}
-
-type EnvironmentUpdate struct {
-	HostNames []string
-}
 
 // environmentCmd represents the environment command
 
@@ -65,7 +53,7 @@ $ shipyardctl get environment org1:env1 --token <token>`,
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		shipyardEnv := orgName+":"+envName
+		shipyardEnv := orgName + ":" + envName
 		status := getEnvironment(shipyardEnv)
 		if !CheckIfAuthn(status) {
 			// retry once more
@@ -79,12 +67,12 @@ $ shipyardctl get environment org1:env1 --token <token>`,
 }
 
 func getEnvironment(envName string) int {
-	req, err := http.NewRequest("GET", clusterTarget + enroberPath + "/" + envName, nil)
+	req, err := http.NewRequest("GET", clusterTarget+enroberPath+"/"+envName, nil)
 	if verbose {
 		PrintVerboseRequest(req)
 	}
 
-	req.Header.Set("Authorization", "Bearer " + authToken)
+	req.Header.Set("Authorization", "Bearer "+authToken)
 	response, err := http.DefaultClient.Do(req)
 
 	if err != nil {
@@ -107,15 +95,13 @@ func getEnvironment(envName string) int {
 	return response.StatusCode
 }
 
-var updateEnvCmd = &cobra.Command{
+var syncEnvCmd = &cobra.Command{
 	Use:   "environment -o {org} -e {env}",
-	Short: "update an active environment",
-	Long: `Given the name of an active environment and a space delimited
-set of hostnames, the environment will be updated. A update of the hostnames
-will replace them entirely.
+	Short: "sync an active environment with Edge",
+	Long: `Given the name of an active environmentit will be sync'd with Edge.
 
 Example of use:
-$ shipyardctl update -o acme -e test --hostnames="test.host.name3,test.host.name1"`,
+$ shipyardctl sync environment -o acme -e test`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		if err := RequireAuthToken(); err != nil {
 			return err
@@ -129,18 +115,14 @@ $ shipyardctl update -o acme -e test --hostnames="test.host.name3,test.host.name
 			return err
 		}
 
-		if err := RequireHostnames(); err != nil {
-			return err
-		}
-
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		shipyardEnv := orgName+":"+envName
-		status := updateEnv(shipyardEnv, strings.Split(hostnames, ","))
+		shipyardEnv := orgName + ":" + envName
+		status := syncEnv(shipyardEnv)
 		if !CheckIfAuthn(status) {
 			// retry once more
-			status := updateEnv(shipyardEnv, strings.Split(hostnames, ","))
+			status := syncEnv(shipyardEnv)
 			if status == 401 {
 				fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
 				fmt.Println("Command failed.")
@@ -149,16 +131,14 @@ $ shipyardctl update -o acme -e test --hostnames="test.host.name3,test.host.name
 	},
 }
 
-func updateEnv(envName string, hostnames []string) int {
-	js, _ := json.Marshal(EnvironmentUpdate{hostnames})
-
-	req, err := http.NewRequest("PATCH", clusterTarget + enroberPath + "/" + envName, bytes.NewBuffer(js))
+func syncEnv(envName string) int {
+	req, err := http.NewRequest("PATCH", clusterTarget+enroberPath+"/"+envName, nil)
 
 	if verbose {
 		PrintVerboseRequest(req)
 	}
 
-	req.Header.Set("Authorization", "Bearer " + authToken)
+	req.Header.Set("Authorization", "Bearer "+authToken)
 	response, err := http.DefaultClient.Do(req)
 
 	if err != nil {
@@ -189,8 +169,7 @@ func init() {
 	environmentCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee organization name")
 	environmentCmd.Flags().StringVarP(&envName, "env", "e", "", "Apigee environment name")
 
-	updateCmd.AddCommand(updateEnvCmd)
-	updateEnvCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee organization name")
-	updateEnvCmd.Flags().StringVarP(&envName, "env", "e", "", "Apigee environment name")
-	updateEnvCmd.Flags().StringVarP(&hostnames, "hostnames", "s", "", "Accepted hostnames for the environment")
+	syncCmd.AddCommand(syncEnvCmd)
+	syncEnvCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee organization name")
+	syncEnvCmd.Flags().StringVarP(&envName, "env", "e", "", "Apigee environment name")
 }
