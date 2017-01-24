@@ -40,7 +40,6 @@ var envVars []string
 var sso_target string
 
 var appName string
-var appPath string
 var runtime string
 var directory string
 var ptsUrl string

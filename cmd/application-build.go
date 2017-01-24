@@ -173,7 +173,7 @@ func getApplication(name string, appspace string) int {
 
 // importAppCmd represents the import application command
 var importAppCmd = &cobra.Command{
-	Use:   "application --name {name}[:{revision/version}] --path {port}:{path} --directory {dir} --org {org} --runtime {runtime}[:{version}]",
+	Use:   "application --name {name}[:{revision/version}] --directory {dir} --org {org} --runtime {runtime}[:{version}]",
 	Short: "imports application into Shipyard",
 	Long: `This command is used to import an application into Shipyard
 from a given, zipped application source archive. Currently, node is the only supported runtime.
@@ -182,7 +182,7 @@ Within the project zip, there must be a valid package.json.
 
 Example of use:
 
-$ shipyardctl import application --name "echo-app1[:1]" --path "9000:/echo-app" --directory . --org acme --runtime node:4`,
+$ shipyardctl import application --name "echo-app1[:1]" --directory . --org acme --runtime node:4`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		if err := RequireAuthToken(); err != nil {
 			return err
@@ -196,10 +196,6 @@ $ shipyardctl import application --name "echo-app1[:1]" --path "9000:/echo-app" 
 			return err
 		}
 
-		if err := RequireAppPath(); err != nil {
-			return err
-		}
-
 		if err := RequireDirectory(); err != nil {
 			return err
 		}
@@ -209,10 +205,10 @@ $ shipyardctl import application --name "echo-app1[:1]" --path "9000:/echo-app" 
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		status := importApp(appName, appPath, directory)
+		status := importApp(appName, directory)
 		if !CheckIfAuthn(status) {
 			// retry once more
-			status = importApp(appName, appPath, directory)
+			status = importApp(appName, directory)
 			if status == 401 {
 				fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
 				fmt.Println("Command failed.")
@@ -221,7 +217,7 @@ $ shipyardctl import application --name "echo-app1[:1]" --path "9000:/echo-app" 
 	},
 }
 
-func importApp(appName string, appPath string, zipPath string) int {
+func importApp(appName string, zipPath string) int {
 	zip, err := os.Open(zipPath)
 	if err != nil {
 		log.Fatal(err)
@@ -263,7 +259,6 @@ func importApp(appName string, appPath string, zipPath string) int {
 
 	writer.WriteField("revision", appVersion)
 	writer.WriteField("name", nameSplit[0])
-	writer.WriteField("publicPath", appPath)
 	writer.WriteField("nodeVersion", runtimeVersion)
 
 	err = writer.Close()
@@ -400,7 +395,6 @@ func init() {
 	importAppCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee org name")
 	importAppCmd.Flags().StringVarP(&runtime, "runtime", "u", "node:4", "Runtime to use for application and optional version, ex. node[:5]")
 	importAppCmd.Flags().StringVarP(&appName, "name", "n", "", "application name and optional revision, ex. my-app[:4]")
-	importAppCmd.Flags().StringVarP(&appPath, "path", "p", "", "application port and base path, ex. 9000:/hello")
 	importAppCmd.Flags().StringVarP(&directory, "directory", "d", "", "directory of application source archive")
 
 	deleteCmd.AddCommand(deleteAppCmd)
