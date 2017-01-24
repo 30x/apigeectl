@@ -1,10 +1,9 @@
 package cmd
 
 import (
-  "os"
-  "fmt"
+	"fmt"
+	"os"
 )
-
 
 // RequireOrgName used to short circuit commands
 // requiring the Apigee org name if it is not present
@@ -75,16 +74,6 @@ func RequireDirectory() error {
 func RequirePTSURL() error {
 	if ptsUrl == "" {
 		return fmt.Errorf("Missing required flag '--pts-url'.")
-	}
-
-	return nil
-}
-
-// RequireHostnames used to short circuit commands
-// requiring hostnames, if it is not present
-func RequireHostnames() error {
-	if hostnames == "" {
-		return fmt.Errorf("Missing required flag '--hostnames'.")
 	}
 
 	return nil
