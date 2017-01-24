@@ -59,16 +59,6 @@ func RequireDirectory() error {
 	return nil
 }
 
-// RequirePTSURL used to short circuit commands
-// requiring a PTS URL, if it is not present
-func RequirePTSURL() error {
-	if ptsUrl == "" {
-		return fmt.Errorf("Missing required flag '--pts-url'.")
-	}
-
-	return nil
-}
-
 // RequireZipPath used to short circuit commands
 // requiring the path to a bundle zip, if it is not present
 func RequireZipPath() error {
