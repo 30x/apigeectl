@@ -45,14 +45,14 @@ var runtime string
 var directory string
 var ptsUrl string
 var replicasUpdate int
-var replicasDeploy int
 var hostnames string
 var bundlePath string
 var bundleName string
 
 var supportedRuntimes = "node"
-
 var config *utils.Config
+
+const replicasDeploy = 1
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{

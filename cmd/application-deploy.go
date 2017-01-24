@@ -37,8 +37,6 @@ type Deployment struct {
 	Replicas       int64
 	PtsUrl         string
 	EnvVars        []EnvVar
-	PublicHosts    string
-	PrivateHosts   string
 }
 
 type deploymentPatch struct {
@@ -299,7 +297,7 @@ $ shipyardctl deploy application -o acme -e test -n example --pts-url "https://p
 
 func deployApplication(envName string, depName string, replicas int64, ptsUrl string, vars []EnvVar) int {
 	// prepare arguments in a Deployment struct and Marshal into JSON
-	js, err := json.Marshal(Deployment{depName, replicas, ptsUrl, vars, hostnames, hostnames})
+	js, err := json.Marshal(Deployment{depName, replicas, ptsUrl, vars})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -537,8 +535,6 @@ func init() {
 	deployApplicationCmd.Flags().StringVarP(&envName, "env", "e", "", "Apigee environment name")
 	deployApplicationCmd.Flags().StringVarP(&appName, "name", "n", "", "name of application deployment to deploy")
 	deployApplicationCmd.Flags().StringVarP(&ptsUrl, "pts-url", "p", "", "URL of the Pod Template Spec given by import")
-	deployApplicationCmd.Flags().IntVarP(&replicasDeploy, "replicas", "r", 1, "Number of application replicas to deploy")
-	deployApplicationCmd.Flags().StringVarP(&hostnames, "hostnames", "s", "", "Accepted hostnames for the deployment")
 
 	updateCmd.AddCommand(updateDeploymentCmd)
 	updateDeploymentCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee organization name")
