@@ -39,16 +39,6 @@ func RequireAppName() error {
 	return nil
 }
 
-// RequireAppPath used to short circuit commands
-// requiring the app path if it is not present
-func RequireAppPath() error {
-	if appPath == "" {
-		return fmt.Errorf("Missing required flag '--path'.")
-	}
-
-	return nil
-}
-
 // RequireBundleName used to short circuit commands
 // requiring the bundle name be provided via the name flag
 func RequireBundleName() error {
