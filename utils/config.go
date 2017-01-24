@@ -28,6 +28,8 @@ const (
   ShipyardctlConfigDir = ".shipyardctl"
   // ShipyardctlConfigFileName name of the config file for shipyardctl
   ShipyardctlConfigFileName = "config"
+  // Default target for proxy Management API
+  DefaultMgmtApi = "https://api.enterprise.apigee.com"
 )
 
 // InitNewConfigFile creates a new config file
@@ -63,7 +65,7 @@ func InitNewConfigFile(name string, sso string, clusterTarget string) error {
 // MakeConfig creates a context named default based on the given environment
 func MakeConfig(name string, sso string, clusterTarget string) *Config {
   cluster := Cluster{name, clusterTarget, sso}
-  context := Context{name, cluster, User{}}
+  context := Context{name, cluster, User{}, DefaultMgmtApi}
 
   return &Config{name, []Context{context}}
 }
@@ -135,9 +137,15 @@ func (c *Config) GetCurrentUsername() string {
   return context.UserInfo.Username
 }
 
+// GetCurrentMgmtAPITarget retrieves the target proxy mgmt api of the current context
+func (c *Config) GetCurrentMgmtAPITarget() string {
+  context := c.GetCurrentContext()
+  return context.ProxyMgmtApi
+}
+
 // NewContext used to create a new context
-func (c *Config) NewContext(name string, sso string, clusterTarget string) error {
-  c.Contexts = append(c.Contexts, Context{name, Cluster{name, clusterTarget, sso}, User{}})
+func (c *Config) NewContext(name string, sso string, clusterTarget string, mgmtTarget string) error {
+  c.Contexts = append(c.Contexts, Context{name, Cluster{name, clusterTarget, sso}, User{}, mgmtTarget})
   c.Save()
 
   return nil

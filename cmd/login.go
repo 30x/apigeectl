@@ -47,6 +47,21 @@ var loginCmd = &cobra.Command{
 Example of use:
 
 $ shipyardctl login -u orgAdmin@apigee.com`,
+  PreRunE: func(cmd *cobra.Command, args []string) error {
+    if err := requireUsername(); err != nil {
+      return err
+    }
+
+    if err := requirePassword(); err != nil {
+      return err
+    }
+
+    if err := askForMFA(); err != nil {
+      return err
+    }
+
+    return nil
+  },
 	Run: func(cmd *cobra.Command, args []string) {
     Login()
 
@@ -55,10 +70,6 @@ $ shipyardctl login -u orgAdmin@apigee.com`,
 }
 
 func Login() {
-  requireUsername()
-  requirePassword()
-  askForMFA()
-
   data := url.Values{}
   data.Add("username", username)
   data.Add("password", password)
@@ -123,7 +134,7 @@ func init() {
   loginCmd.Flags().StringVarP(&password, "password", "p", "", "Apigee org admin password")
 }
 
-func requireUsername() {
+func requireUsername() error {
   if username == "" {
     if username = os.Getenv("APIGEE_USERNAME"); username == "" {
       consolereader := bufio.NewReader(os.Stdin)
@@ -131,39 +142,41 @@ func requireUsername() {
 
       usr, err := consolereader.ReadString('\n')
       if err != nil {
-        fmt.Print(err)
-        os.Exit(1)
+        return err
       }
 
       username = strings.TrimSpace(usr)
     }
   }
+
+  return nil
 }
 
-func requirePassword() {
+func requirePassword() error {
   if password == "" {
     if password = os.Getenv("APIGEE_PASSWORD"); password == "" {
       fmt.Println("Enter password for username '" + username + "':")
       pass, err := gopass.GetPasswd()
       if err != nil {
-        fmt.Println(err)
-        os.Exit(1)
+        return err
       }
 
       password = string(pass)
     }
   }
+
+  return nil
 }
 
-func askForMFA() {
+func askForMFA() error {
   consolereader := bufio.NewReader(os.Stdin)
   fmt.Println("Enter your MFA token or just press 'enter' to skip:")
 
   input, err := consolereader.ReadString('\n')
   if err != nil {
-    fmt.Print(err)
-    os.Exit(1)
+    return err
   }
 
   mfa = strings.TrimSpace(input)
+  return nil
 }

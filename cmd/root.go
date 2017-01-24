@@ -16,12 +16,12 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"net/http"
 	"net/http/httputil"
+	"os"
 
-	"github.com/spf13/cobra"
 	"github.com/30x/shipyardctl/utils"
+	"github.com/spf13/cobra"
 )
 
 var verbose bool
@@ -38,6 +38,19 @@ var basePath string
 var pubKey string
 var envVars []string
 var sso_target string
+
+var appName string
+var appPath string
+var runtime string
+var directory string
+var ptsUrl string
+var replicasUpdate int
+var replicasDeploy int
+var hostnames string
+var bundlePath string
+var bundleName string
+
+var supportedRuntimes = "node"
 
 var config *utils.Config
 
@@ -174,7 +187,7 @@ func checkEnvironmentOrConfig() {
 // 2. APIGEE_TOKEN env var
 // 3. config file
 // 4. Runs login sequence if there is no token at all
-func RequireAuthToken() {
+func RequireAuthToken() error {
 	if authToken == "" { // check flag first
 		if authToken = os.Getenv("APIGEE_TOKEN"); authToken == "" { // check environment second
 			if config != nil { // check config file last
@@ -185,17 +198,14 @@ func RequireAuthToken() {
 					authToken = config.GetCurrentToken()
 				}
 
-				return
+				return nil
 			} else {
-				fmt.Println("No config file loaded.")
-				fmt.Println("Missing required auth token.")
-				fmt.Println("Run shipyardctl login.")
-				os.Exit(1)
+				return fmt.Errorf("No config file loaded.\nMissing required auth token.\nRun shipyardctl login.")
 			}
 		}
 	}
 
-	return
+	return nil
 }
 
 // CheckIfAuthn checks if the API call was authenticated or not
@@ -209,22 +219,4 @@ func CheckIfAuthn(status int) bool {
 	}
 
 	return true
-}
-
-// RequireOrgName used to short circuit commands
-// requiring the Apigee org name if it is not present
-func RequireOrgName() {
-	if orgName == "" {
-		if orgName = os.Getenv("APIGEE_ORG"); orgName == "" {
-			fmt.Println("Missing required flag '--org', or place in environment as APIGEE_ORG.")
-			os.Exit(1)
-		}
-	}
-
-	return
-}
-
-// MakeBuildPath make build service path with given orgName
-func MakeBuildPath() {
-	basePath = fmt.Sprintf("/imagespaces/%s/images", orgName)
 }
