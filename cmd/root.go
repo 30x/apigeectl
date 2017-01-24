@@ -42,7 +42,6 @@ var sso_target string
 var appName string
 var runtime string
 var directory string
-var ptsUrl string
 var replicasUpdate int
 var bundlePath string
 var bundleName string
