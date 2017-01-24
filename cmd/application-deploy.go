@@ -35,7 +35,6 @@ type EnvVar struct {
 type Deployment struct {
 	DeploymentName string
 	Replicas       int64
-	PtsUrl         string
 	EnvVars        []EnvVar
 }
 
@@ -43,7 +42,6 @@ type deploymentPatch struct {
 	PublicHosts  *string `json:"publicHosts,omitempty"`
 	PrivateHosts *string `json:"privateHosts,omitempty"`
 	Replicas     *int32  `json:"replicas,omitempty"`
-	PtsURL       string  `json:"ptsURL"`
 }
 
 const (
@@ -248,13 +246,12 @@ func undeployApplication(envName string, depName string) int {
 
 // deployment creation command
 var deployApplicationCmd = &cobra.Command{
-	Use:   "application -o {org} -e {env} -n {name} --pts-url {ptsUrl}",
+	Use:   "application -o {org} -e {env} -n {name}",
 	Short: "creates a new deployment in the given environment with given name",
-	Long: `A deployment requires a name, the number of replicas and the URL that locates
-the appropriate Pod Template Spec imported to Shipyard.
+	Long: `A deployment requires the application name and the organization and environment information.
 
 Example of use:
-$ shipyardctl deploy application -o acme -e test -n example --pts-url "https://pts.url.com"`,
+$ shipyardctl deploy application -o acme -e test -n example`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		if err := RequireAuthToken(); err != nil {
 			return err
@@ -272,10 +269,6 @@ $ shipyardctl deploy application -o acme -e test -n example --pts-url "https://p
 			return err
 		}
 
-		if err := RequirePTSURL(); err != nil {
-			return err
-		}
-
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
@@ -283,10 +276,10 @@ $ shipyardctl deploy application -o acme -e test -n example --pts-url "https://p
 		shipyardEnv := orgName + ":" + envName
 		replicas64 := int64(replicasDeploy)
 
-		status := deployApplication(shipyardEnv, appName, replicas64, ptsUrl, vars)
+		status := deployApplication(shipyardEnv, appName, replicas64, vars)
 		if !CheckIfAuthn(status) {
 			// retry once more
-			status := deployApplication(envName, appName, replicas64, ptsUrl, vars)
+			status := deployApplication(envName, appName, replicas64, vars)
 			if status == 401 {
 				fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
 				fmt.Println("Command failed.")
@@ -295,9 +288,9 @@ $ shipyardctl deploy application -o acme -e test -n example --pts-url "https://p
 	},
 }
 
-func deployApplication(envName string, depName string, replicas int64, ptsUrl string, vars []EnvVar) int {
+func deployApplication(envName string, depName string, replicas int64, vars []EnvVar) int {
 	// prepare arguments in a Deployment struct and Marshal into JSON
-	js, err := json.Marshal(Deployment{depName, replicas, ptsUrl, vars})
+	js, err := json.Marshal(Deployment{depName, replicas, vars})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -368,13 +361,12 @@ $ shipyardctl update deployment shipyardctl update deployment --org acme --env t
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		shipyardEnv := orgName + ":" + envName
-		if replicasUpdate == -1 && ptsUrl == "" {
+		if replicasUpdate == -1 {
 			fmt.Println("Nothing to update. Ending.")
 			return
 		}
 
 		updateData := deploymentPatch{}
-		updateData.PtsURL = ptsUrl
 
 		if replicasUpdate != -1 {
 			replicas32 := int32(replicasUpdate)
@@ -534,14 +526,12 @@ func init() {
 	deployApplicationCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee organization name")
 	deployApplicationCmd.Flags().StringVarP(&envName, "env", "e", "", "Apigee environment name")
 	deployApplicationCmd.Flags().StringVarP(&appName, "name", "n", "", "name of application deployment to deploy")
-	deployApplicationCmd.Flags().StringVarP(&ptsUrl, "pts-url", "p", "", "URL of the Pod Template Spec given by import")
 
 	updateCmd.AddCommand(updateDeploymentCmd)
 	updateDeploymentCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee organization name")
 	updateDeploymentCmd.Flags().StringVarP(&envName, "env", "e", "", "Apigee environment name")
 	updateDeploymentCmd.Flags().StringVarP(&appName, "name", "n", "", "name of application deployment to deploy")
 	updateDeploymentCmd.Flags().IntVarP(&replicasUpdate, "replicas", "r", -1, "number of replicas to scale to")
-	updateDeploymentCmd.Flags().StringVarP(&ptsUrl, "pts-url", "p", "", "URL of the Pod Template Spec to update with")
 }
 
 func parseEnvVars() (parsed []EnvVar) {
