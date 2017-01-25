@@ -71,5 +71,5 @@ func RequireZipPath() error {
 
 // MakeBuildPath make build service path with given orgName
 func MakeBuildPath() {
-	basePath = fmt.Sprintf("/imagespaces/%s/images", orgName)
+	basePath = fmt.Sprintf("/organizations/%s/apps", orgName)
 }

@@ -28,7 +28,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var nodeLTS = "4"
+// DefaultRuntime is the default runtime selection for imported apps
+const DefaultRuntime = "node:4"
 
 // getApplicationsCmd represents the application command
 var getApplicationsCmd = &cobra.Command{
@@ -238,11 +239,11 @@ func importApp(appName string, zipPath string) int {
 		}
 	}
 
-	runtimeVersion := nodeLTS
-	runtimeSplit := strings.Split(runtime, ":")
-	if len(runtimeSplit) > 1 {
-		runtimeVersion = runtimeSplit[1]
+	if runtime == "" {
+		runtime = DefaultRuntime
 	}
+
+	runtimeSplit := strings.Split(runtime, ":")
 
 	if !isSupportedRuntime(runtimeSplit[0]) {
 		fmt.Printf("Provided runtime: \"%s\"\n", runtimeSplit[0])
@@ -259,7 +260,7 @@ func importApp(appName string, zipPath string) int {
 
 	writer.WriteField("revision", appVersion)
 	writer.WriteField("name", nameSplit[0])
-	writer.WriteField("nodeVersion", runtimeVersion)
+	writer.WriteField("runtime", runtime)
 
 	err = writer.Close()
 	if err != nil {
