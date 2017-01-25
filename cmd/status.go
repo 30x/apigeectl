@@ -15,11 +15,11 @@
 package cmd
 
 import (
-	"net/http"
-	"io"
 	"fmt"
-	"os"
+	"io"
 	"log"
+	"net/http"
+	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -36,7 +36,7 @@ $ shipyardctl get status`,
 	Run: func(cmd *cobra.Command, args []string) {
 
 		// get kiln status
-		kilnReq, err := http.NewRequest("GET", clusterTarget + "/imagespaces/status", nil)
+		kilnReq, err := http.NewRequest("GET", clusterTarget+"/organizations/status", nil)
 		if verbose {
 			PrintVerboseRequest(kilnReq)
 		}
@@ -57,7 +57,7 @@ $ shipyardctl get status`,
 			log.Fatal(err)
 		}
 
-		enroberReq, err := http.NewRequest("GET", clusterTarget + "/environments/status", nil)
+		enroberReq, err := http.NewRequest("GET", clusterTarget+"/environments/status", nil)
 		if verbose {
 			PrintVerboseRequest(enroberReq)
 		}
