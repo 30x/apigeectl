@@ -174,7 +174,7 @@ func getApplication(name string, appspace string) int {
 
 // importAppCmd represents the import application command
 var importAppCmd = &cobra.Command{
-	Use:   "application --name {name}[:{revision/version}] --directory {dir} --org {org} --runtime {runtime}[:{version}]",
+	Use:   "application --name {name} --directory {dir} --org {org} --runtime {runtime}[:{version}]",
 	Short: "imports application into Shipyard",
 	Long: `This command is used to import an application into Shipyard
 from a given, zipped application source archive. Currently, node is the only supported runtime.
@@ -183,7 +183,7 @@ Within the project zip, there must be a valid package.json.
 
 Example of use:
 
-$ shipyardctl import application --name "echo-app1[:1]" --directory . --org acme --runtime node:4`,
+$ shipyardctl import application --name "echo-app1" --directory . --org acme --runtime node:4`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		if err := RequireAuthToken(); err != nil {
 			return err
@@ -252,14 +252,7 @@ func importApp(appName string, zipPath string) int {
 		return -1
 	}
 
-	appVersion := "1"
-	nameSplit := strings.Split(appName, ":")
-	if len(nameSplit) > 1 {
-		appVersion = nameSplit[1]
-	}
-
-	writer.WriteField("revision", appVersion)
-	writer.WriteField("name", nameSplit[0])
+	writer.WriteField("name", appName)
 	writer.WriteField("runtime", runtime)
 
 	err = writer.Close()
@@ -395,7 +388,7 @@ func init() {
 	importAppCmd.Flags().StringSliceVar(&envVars, "env-var", []string{}, "Environment variable to set in the built image \"KEY=VAL\" ")
 	importAppCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee org name")
 	importAppCmd.Flags().StringVarP(&runtime, "runtime", "u", "node:4", "Runtime to use for application and optional version, ex. node[:5]")
-	importAppCmd.Flags().StringVarP(&appName, "name", "n", "", "application name and optional revision, ex. my-app[:4]")
+	importAppCmd.Flags().StringVarP(&appName, "name", "n", "", "application name and optional revision")
 	importAppCmd.Flags().StringVarP(&directory, "directory", "d", "", "directory of application source archive")
 
 	deleteCmd.AddCommand(deleteAppCmd)
