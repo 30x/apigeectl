@@ -18,7 +18,7 @@ var TARGET_ENDPOINT = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
     </PostFlow>
     <Flows/>
     <ScriptContainer>
-        <ResourceURL>{{.PublicPath}}</ResourceURL>
+        <ResourceURL>{{.TargetPath}}</ResourceURL>
     </ScriptContainer>
 </TargetEndpoint>`
 
