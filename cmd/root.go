@@ -45,6 +45,7 @@ var directory string
 var replicasUpdate int
 var bundlePath string
 var bundleName string
+var force bool
 
 var supportedRuntimes = "node"
 var config *utils.Config

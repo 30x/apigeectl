@@ -1,8 +1,10 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
 	"os"
+	"strings"
 )
 
 // RequireOrgName used to short circuit commands
@@ -72,4 +74,23 @@ func RequireZipPath() error {
 // MakeBuildPath make build service path with given orgName
 func MakeBuildPath() {
 	basePath = fmt.Sprintf("/organizations/%s/apps", orgName)
+}
+
+// PromptAppDeletion prompts the user trying to delete an app before they do it
+func PromptAppDeletion(name string) (bool, error) {
+	consolereader := bufio.NewReader(os.Stdin)
+	fmt.Printf("You are about to delete all revisions of \"%s\". Are you sure? [Y/n]: ", name)
+
+	input, err := consolereader.ReadString('\n')
+	if err != nil {
+		return false, err
+	}
+
+	input = strings.TrimSpace(input)
+
+	if input == "Y" {
+		return true, nil
+	}
+
+	return false, nil
 }
