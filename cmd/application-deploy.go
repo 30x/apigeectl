@@ -24,6 +24,8 @@ import (
 	"os"
 	"strings"
 
+	"strconv"
+
 	"github.com/spf13/cobra"
 )
 
@@ -34,6 +36,7 @@ type EnvVar struct {
 
 type Deployment struct {
 	DeploymentName string
+	Revision       int32
 	Replicas       int64
 	EnvVars        []EnvVar
 }
@@ -246,12 +249,12 @@ func undeployApplication(envName string, depName string) int {
 
 // deployment creation command
 var deployApplicationCmd = &cobra.Command{
-	Use:   "application -o {org} -e {env} -n {name}",
-	Short: "creates a new deployment in the given environment with given name",
+	Use:   "application -o {org} -e {env} -n {name}:{revision}",
+	Short: "creates a new deployment in the given environment with given app name",
 	Long: `A deployment requires the application name and the organization and environment information.
 
 Example of use:
-$ shipyardctl deploy application -o acme -e test -n example`,
+$ shipyardctl deploy application -o acme -e test -n example:4`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		if err := RequireAuthToken(); err != nil {
 			return err
@@ -276,10 +279,21 @@ $ shipyardctl deploy application -o acme -e test -n example`,
 		shipyardEnv := orgName + ":" + envName
 		replicas64 := int64(replicasDeploy)
 
-		status := deployApplication(shipyardEnv, appName, replicas64, vars)
+		nameSplit := strings.Split(appName, ":")
+		if len(nameSplit) < 2 {
+			fmt.Printf("Missing required revision number.")
+			return
+		}
+
+		revision, err := strconv.Atoi(nameSplit[1])
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		status := deployApplication(shipyardEnv, nameSplit[NAME], int32(revision), replicas64, vars)
 		if !CheckIfAuthn(status) {
 			// retry once more
-			status := deployApplication(envName, appName, replicas64, vars)
+			status := deployApplication(envName, nameSplit[NAME], int32(revision), replicas64, vars)
 			if status == 401 {
 				fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
 				fmt.Println("Command failed.")
@@ -288,9 +302,9 @@ $ shipyardctl deploy application -o acme -e test -n example`,
 	},
 }
 
-func deployApplication(envName string, depName string, replicas int64, vars []EnvVar) int {
+func deployApplication(envName string, depName string, revision int32, replicas int64, vars []EnvVar) int {
 	// prepare arguments in a Deployment struct and Marshal into JSON
-	js, err := json.Marshal(Deployment{depName, replicas, vars})
+	js, err := json.Marshal(Deployment{depName, revision, replicas, vars})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -525,7 +539,7 @@ func init() {
 	deployApplicationCmd.Flags().StringSliceVar(&envVars, "env-var", []string{}, "Environment variables to set in the deployment")
 	deployApplicationCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee organization name")
 	deployApplicationCmd.Flags().StringVarP(&envName, "env", "e", "", "Apigee environment name")
-	deployApplicationCmd.Flags().StringVarP(&appName, "name", "n", "", "name of application deployment to deploy")
+	deployApplicationCmd.Flags().StringVarP(&appName, "name", "n", "", "name and revision of application to deploy, ex. \"hello:3\"")
 
 	updateCmd.AddCommand(updateDeploymentCmd)
 	updateDeploymentCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee organization name")

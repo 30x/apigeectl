@@ -320,31 +320,52 @@ $ shipyardctl delete application -n example:1 --org org1`,
 			return err
 		}
 
+		if force {
+			if err := RequireEnvName(); err != nil {
+				return err
+			}
+		}
+
 		MakeBuildPath()
 
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		nameSplit := strings.Split(appName, ":")
-		if len(nameSplit) < 2 {
-			fmt.Println("Application revision required")
-			return
+
+		if !force {
+			promptResponse, err := PromptAppDeletion(appName)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			if !promptResponse {
+				fmt.Println("Chose to cancel. Aborting.")
+				return
+			}
+		} else {
+			shipyardEnv := orgName + ":" + envName
+			fmt.Printf("Undeploying any active deployment of %s in %s\n", appName, shipyardEnv)
+
+			undeployApplication(shipyardEnv, appName)
+
 		}
 
-		status := deleteApp(nameSplit[0], nameSplit[1])
+		status := deleteApp(appName)
 		if !CheckIfAuthn(status) {
 			// retry once more
-			status := deleteApp(nameSplit[0], nameSplit[1])
+			status := deleteApp(appName)
 			if status == 401 {
 				fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
 				fmt.Println("Command failed.")
 			}
+		} else if status == http.StatusConflict {
+			fmt.Println("\nPlease use the --force flag or use the undeploy command first if you wish to undeploy and delete the application")
 		}
 	},
 }
 
-func deleteApp(appName string, revision string) int {
-	req, err := http.NewRequest("DELETE", clusterTarget+basePath+"/"+appName+"/version/"+revision, nil)
+func deleteApp(appName string) int {
+	req, err := http.NewRequest("DELETE", clusterTarget+basePath+"/"+appName, nil)
 	if verbose {
 		PrintVerboseRequest(req)
 	}
@@ -363,7 +384,7 @@ func deleteApp(appName string, revision string) int {
 	defer response.Body.Close()
 
 	if response.StatusCode == 200 {
-		fmt.Println("Deletion of application revision successful.")
+		fmt.Printf("Deletion of application %s successful.\n", appName)
 	}
 
 	if response.StatusCode != 401 {
@@ -393,7 +414,9 @@ func init() {
 
 	deleteCmd.AddCommand(deleteAppCmd)
 	deleteAppCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee org name")
-	deleteAppCmd.Flags().StringVarP(&appName, "name", "n", "", "application name and revision, ex. my-app:4")
+	deleteAppCmd.Flags().StringVarP(&envName, "env", "e", "", "Apigee environment name (only necessary when forcing)")
+	deleteAppCmd.Flags().StringVarP(&appName, "name", "n", "", "Name of application to be deleted")
+	deleteAppCmd.Flags().BoolVar(&force, "force", false, "forces the deletion of all app revisions and any active deployments")
 }
 
 func isSupportedRuntime(input string) bool {
