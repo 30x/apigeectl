@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"mime/multipart"
 	"net/http"
@@ -25,6 +26,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/30x/zipper"
 	"github.com/spf13/cobra"
 )
 
@@ -218,7 +220,23 @@ $ shipyardctl import application --name "echo-app1" --directory . --org acme --r
 	},
 }
 
-func importApp(appName string, zipPath string) int {
+func importApp(appName string, directory string) int {
+	tmpdir, err := ioutil.TempDir("", appName)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer os.RemoveAll(tmpdir)
+	zipPath := filepath.Join(tmpdir, appName+".zip")
+
+	err = zipper.ArchiveUnprocessed(directory, zipPath, zipper.Options{
+		ExcludeBaseDir: true,
+	})
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	zip, err := os.Open(zipPath)
 	if err != nil {
 		log.Fatal(err)

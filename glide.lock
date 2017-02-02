@@ -1,24 +1,26 @@
-hash: 4c63826cd73800e94331bf96bfbac42edde5e28880948bc4e571715dd0853a4d
-updated: 2016-12-02T14:29:05.298147114-05:00
+hash: 821a37a6e1c7c32c3cf2d3ac8428280109c25b6575538f0da57a5690b0a43922
+updated: 2017-02-02T12:47:30.182854892-08:00
 imports:
 - name: github.com/30x/zipper
-  version: e94610c9bd69319dbcb930a61b70ab857003264f
+  version: 2ce12acb69610439b5d5f5bf9c4f81ec5b28847b
 - name: github.com/howeyc/gopass
-  version: f5387c492211eb133053880d23dfae62aa14123d
+  version: 3ca23474a7c7203e0a0a070fd33508f6efdb9b3d
 - name: github.com/inconshreveable/mousetrap
   version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
 - name: github.com/spf13/cobra
-  version: 9495bc009a56819bdb0ddbc1a373e29c140bc674
+  version: 35136c09d8da66b901337c6e86fd8e88a1a255bd
 - name: github.com/spf13/pflag
   version: 5ccb023bc27df288a957c5e994cd44fd19619465
 - name: golang.org/x/crypto
-  version: 8a549a1948fc5271eb24f36dcb0d3b47dec75a16
+  version: 1f22c0103821b9390939b6776727195525381532
   subpackages:
   - ssh/terminal
 - name: golang.org/x/sys
-  version: ca83bd2cb9abb47839b50eb4da612f00158f5870
+  version: 8f0908ab3b2457e2e15403d3697c9ef5cb4b57a9
   subpackages:
   - unix
 - name: gopkg.in/yaml.v2
-  version: a5b47d31c556af34a302ce5d659e6fea44d90de0
-devImports: []
+  version: 4c78c975fe7c825c6d1466c42be594d1d6f3aba6
+  repo: https://github.com/go-yaml/yaml.git
+  vcs: git
+testImports: []

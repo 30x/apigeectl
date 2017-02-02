@@ -261,7 +261,7 @@ func MakeProxyBundle(name string) (string, string, error) {
 	}
 
 	zipDir := filepath.Join(tmpdir, name+".zip")
-	err = zipper.Archive(dir, zipDir)
+	err = zipper.Archive(dir, zipDir, zipper.Options{})
 	if err != nil {
 		return "", "", err
 	}
