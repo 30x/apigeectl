@@ -252,9 +252,19 @@ var deployApplicationCmd = &cobra.Command{
 	Use:   "application -o {org} -e {env} -n {name}:{revision}",
 	Short: "creates a new deployment in the given environment with given app name",
 	Long: `A deployment requires the application name and the organization and environment information.
-
 Example of use:
-$ shipyardctl deploy application -o acme -e test -n example:4`,
+$ shipyardctl deploy application -o acme -e test -n example:4
+
+This command can also update an active deployment, with the --force flag.
+
+#Update application reivision
+$ shipyardctl deploy application -o acme -e test -n example:5 --force
+
+#Update environment variable
+$ shipyardctl deploy application -o acme -e test -n example --force --env-var="EXISTING_KEY=NEW_VAL"
+
+#Force fresh deployment of an active revision, a.k.a bouncing a deployment
+$ shipyardctl deploy application -o acme -e test -n example --force`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		if err := RequireAuthToken(); err != nil {
 			return err
