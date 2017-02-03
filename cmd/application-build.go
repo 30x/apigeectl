@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"mime/multipart"
 	"net/http"
@@ -25,10 +26,12 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/30x/zipper"
 	"github.com/spf13/cobra"
 )
 
-var nodeLTS = "4"
+// DefaultRuntime is the default runtime selection for imported apps
+const DefaultRuntime = "node:4"
 
 // getApplicationsCmd represents the application command
 var getApplicationsCmd = &cobra.Command{
@@ -173,7 +176,7 @@ func getApplication(name string, appspace string) int {
 
 // importAppCmd represents the import application command
 var importAppCmd = &cobra.Command{
-	Use:   "application --name {name}[:{revision/version}] --path {port}:{path} --directory {dir} --org {org} --runtime {runtime}[:{version}]",
+	Use:   "application --name {name} --directory {dir} --org {org} --runtime {runtime}[:{version}]",
 	Short: "imports application into Shipyard",
 	Long: `This command is used to import an application into Shipyard
 from a given, zipped application source archive. Currently, node is the only supported runtime.
@@ -182,7 +185,7 @@ Within the project zip, there must be a valid package.json.
 
 Example of use:
 
-$ shipyardctl import application --name "echo-app1[:1]" --path "9000:/echo-app" --directory . --org acme --runtime node:4`,
+$ shipyardctl import application --name "echo-app1" --directory . --org acme --runtime node:4`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		if err := RequireAuthToken(); err != nil {
 			return err
@@ -196,10 +199,6 @@ $ shipyardctl import application --name "echo-app1[:1]" --path "9000:/echo-app" 
 			return err
 		}
 
-		if err := RequireAppPath(); err != nil {
-			return err
-		}
-
 		if err := RequireDirectory(); err != nil {
 			return err
 		}
@@ -209,10 +208,10 @@ $ shipyardctl import application --name "echo-app1[:1]" --path "9000:/echo-app" 
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		status := importApp(appName, appPath, directory)
+		status := importApp(appName, directory)
 		if !CheckIfAuthn(status) {
 			// retry once more
-			status = importApp(appName, appPath, directory)
+			status = importApp(appName, directory)
 			if status == 401 {
 				fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
 				fmt.Println("Command failed.")
@@ -221,7 +220,23 @@ $ shipyardctl import application --name "echo-app1[:1]" --path "9000:/echo-app" 
 	},
 }
 
-func importApp(appName string, appPath string, zipPath string) int {
+func importApp(appName string, directory string) int {
+	tmpdir, err := ioutil.TempDir("", appName)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer os.RemoveAll(tmpdir)
+	zipPath := filepath.Join(tmpdir, appName+".zip")
+
+	err = zipper.ArchiveUnprocessed(directory, zipPath, zipper.Options{
+		ExcludeBaseDir: true,
+	})
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	zip, err := os.Open(zipPath)
 	if err != nil {
 		log.Fatal(err)
@@ -242,11 +257,11 @@ func importApp(appName string, appPath string, zipPath string) int {
 		}
 	}
 
-	runtimeVersion := nodeLTS
-	runtimeSplit := strings.Split(runtime, ":")
-	if len(runtimeSplit) > 1 {
-		runtimeVersion = runtimeSplit[1]
+	if runtime == "" {
+		runtime = DefaultRuntime
 	}
+
+	runtimeSplit := strings.Split(runtime, ":")
 
 	if !isSupportedRuntime(runtimeSplit[0]) {
 		fmt.Printf("Provided runtime: \"%s\"\n", runtimeSplit[0])
@@ -255,16 +270,8 @@ func importApp(appName string, appPath string, zipPath string) int {
 		return -1
 	}
 
-	appVersion := "1"
-	nameSplit := strings.Split(appName, ":")
-	if len(nameSplit) > 1 {
-		appVersion = nameSplit[1]
-	}
-
-	writer.WriteField("revision", appVersion)
-	writer.WriteField("name", nameSplit[0])
-	writer.WriteField("publicPath", appPath)
-	writer.WriteField("nodeVersion", runtimeVersion)
+	writer.WriteField("name", appName)
+	writer.WriteField("runtime", runtime)
 
 	err = writer.Close()
 	if err != nil {
@@ -331,31 +338,52 @@ $ shipyardctl delete application -n example:1 --org org1`,
 			return err
 		}
 
+		if force {
+			if err := RequireEnvName(); err != nil {
+				return err
+			}
+		}
+
 		MakeBuildPath()
 
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		nameSplit := strings.Split(appName, ":")
-		if len(nameSplit) < 2 {
-			fmt.Println("Application revision required")
-			return
+
+		if !force {
+			promptResponse, err := PromptAppDeletion(appName)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			if !promptResponse {
+				fmt.Println("Chose to cancel. Aborting.")
+				return
+			}
+		} else {
+			shipyardEnv := orgName + ":" + envName
+			fmt.Printf("Undeploying any active deployment of %s in %s\n", appName, shipyardEnv)
+
+			undeployApplication(shipyardEnv, appName)
+
 		}
 
-		status := deleteApp(nameSplit[0], nameSplit[1])
+		status := deleteApp(appName)
 		if !CheckIfAuthn(status) {
 			// retry once more
-			status := deleteApp(nameSplit[0], nameSplit[1])
+			status := deleteApp(appName)
 			if status == 401 {
 				fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
 				fmt.Println("Command failed.")
 			}
+		} else if status == http.StatusConflict {
+			fmt.Println("\nPlease use the --force flag or use the undeploy command first if you wish to undeploy and delete the application")
 		}
 	},
 }
 
-func deleteApp(appName string, revision string) int {
-	req, err := http.NewRequest("DELETE", clusterTarget+basePath+"/"+appName+"/version/"+revision, nil)
+func deleteApp(appName string) int {
+	req, err := http.NewRequest("DELETE", clusterTarget+basePath+"/"+appName, nil)
 	if verbose {
 		PrintVerboseRequest(req)
 	}
@@ -374,7 +402,7 @@ func deleteApp(appName string, revision string) int {
 	defer response.Body.Close()
 
 	if response.StatusCode == 200 {
-		fmt.Println("Deletion of application revision successful.")
+		fmt.Printf("Deletion of application %s successful.\n", appName)
 	}
 
 	if response.StatusCode != 401 {
@@ -399,13 +427,14 @@ func init() {
 	importAppCmd.Flags().StringSliceVar(&envVars, "env-var", []string{}, "Environment variable to set in the built image \"KEY=VAL\" ")
 	importAppCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee org name")
 	importAppCmd.Flags().StringVarP(&runtime, "runtime", "u", "node:4", "Runtime to use for application and optional version, ex. node[:5]")
-	importAppCmd.Flags().StringVarP(&appName, "name", "n", "", "application name and optional revision, ex. my-app[:4]")
-	importAppCmd.Flags().StringVarP(&appPath, "path", "p", "", "application port and base path, ex. 9000:/hello")
+	importAppCmd.Flags().StringVarP(&appName, "name", "n", "", "application name and optional revision")
 	importAppCmd.Flags().StringVarP(&directory, "directory", "d", "", "directory of application source archive")
 
 	deleteCmd.AddCommand(deleteAppCmd)
 	deleteAppCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee org name")
-	deleteAppCmd.Flags().StringVarP(&appName, "name", "n", "", "application name and revision, ex. my-app:4")
+	deleteAppCmd.Flags().StringVarP(&envName, "env", "e", "", "Apigee environment name (only necessary when forcing)")
+	deleteAppCmd.Flags().StringVarP(&appName, "name", "n", "", "Name of application to be deleted")
+	deleteAppCmd.Flags().BoolVar(&force, "force", false, "forces the deletion of all app revisions and any active deployments")
 }
 
 func isSupportedRuntime(input string) bool {

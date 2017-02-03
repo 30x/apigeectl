@@ -40,19 +40,16 @@ var envVars []string
 var sso_target string
 
 var appName string
-var appPath string
 var runtime string
 var directory string
-var ptsUrl string
-var replicasUpdate int
-var replicasDeploy int
-var hostnames string
 var bundlePath string
 var bundleName string
+var force bool
 
 var supportedRuntimes = "node"
-
 var config *utils.Config
+
+const defaultReplicas = 1
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{

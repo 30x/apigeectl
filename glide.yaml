@@ -6,3 +6,7 @@ import:
   subpackages:
   - ssh/terminal
 - package: github.com/30x/zipper
+- package: gopkg.in/yaml.v2
+  vcs: git
+  repo: https://github.com/go-yaml/yaml.git
+  version: v2

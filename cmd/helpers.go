@@ -1,10 +1,11 @@
 package cmd
 
 import (
-  "os"
-  "fmt"
+	"bufio"
+	"fmt"
+	"os"
+	"strings"
 )
-
 
 // RequireOrgName used to short circuit commands
 // requiring the Apigee org name if it is not present
@@ -40,16 +41,6 @@ func RequireAppName() error {
 	return nil
 }
 
-// RequireAppPath used to short circuit commands
-// requiring the app path if it is not present
-func RequireAppPath() error {
-	if appPath == "" {
-		return fmt.Errorf("Missing required flag '--path'.")
-	}
-
-	return nil
-}
-
 // RequireBundleName used to short circuit commands
 // requiring the bundle name be provided via the name flag
 func RequireBundleName() error {
@@ -70,26 +61,6 @@ func RequireDirectory() error {
 	return nil
 }
 
-// RequirePTSURL used to short circuit commands
-// requiring a PTS URL, if it is not present
-func RequirePTSURL() error {
-	if ptsUrl == "" {
-		return fmt.Errorf("Missing required flag '--pts-url'.")
-	}
-
-	return nil
-}
-
-// RequireHostnames used to short circuit commands
-// requiring hostnames, if it is not present
-func RequireHostnames() error {
-	if hostnames == "" {
-		return fmt.Errorf("Missing required flag '--hostnames'.")
-	}
-
-	return nil
-}
-
 // RequireZipPath used to short circuit commands
 // requiring the path to a bundle zip, if it is not present
 func RequireZipPath() error {
@@ -102,5 +73,24 @@ func RequireZipPath() error {
 
 // MakeBuildPath make build service path with given orgName
 func MakeBuildPath() {
-	basePath = fmt.Sprintf("/imagespaces/%s/images", orgName)
+	basePath = fmt.Sprintf("/organizations/%s/apps", orgName)
+}
+
+// PromptAppDeletion prompts the user trying to delete an app before they do it
+func PromptAppDeletion(name string) (bool, error) {
+	consolereader := bufio.NewReader(os.Stdin)
+	fmt.Printf("You are about to delete all revisions of \"%s\". Are you sure? [Y/n]: ", name)
+
+	input, err := consolereader.ReadString('\n')
+	if err != nil {
+		return false, err
+	}
+
+	input = strings.TrimSpace(input)
+
+	if input == "Y" {
+		return true, nil
+	}
+
+	return false, nil
 }
