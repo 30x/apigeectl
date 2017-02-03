@@ -42,7 +42,6 @@ var sso_target string
 var appName string
 var runtime string
 var directory string
-var replicasUpdate int
 var bundlePath string
 var bundleName string
 var force bool
@@ -50,7 +49,7 @@ var force bool
 var supportedRuntimes = "node"
 var config *utils.Config
 
-const replicasDeploy = 1
+const defaultReplicas = 1
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{

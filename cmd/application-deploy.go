@@ -37,14 +37,14 @@ type EnvVar struct {
 type Deployment struct {
 	DeploymentName string
 	Revision       int32
-	Replicas       int64
+	Replicas       int32
 	EnvVars        []EnvVar
 }
 
 type deploymentPatch struct {
-	PublicHosts  *string `json:"publicHosts,omitempty"`
-	PrivateHosts *string `json:"privateHosts,omitempty"`
-	Replicas     *int32  `json:"replicas,omitempty"`
+	Revision *int32   `json:"revision,omitempty"`
+	Replicas *int32   `json:"replicas,omitempty"`
+	EnvVars  []EnvVar `json:"envVars,omitempty"`
 }
 
 const (
@@ -252,9 +252,19 @@ var deployApplicationCmd = &cobra.Command{
 	Use:   "application -o {org} -e {env} -n {name}:{revision}",
 	Short: "creates a new deployment in the given environment with given app name",
 	Long: `A deployment requires the application name and the organization and environment information.
-
 Example of use:
-$ shipyardctl deploy application -o acme -e test -n example:4`,
+$ shipyardctl deploy application -o acme -e test -n example:4
+
+This command can also update an active deployment, with the --force flag.
+
+#Update application reivision
+$ shipyardctl deploy application -o acme -e test -n example:5 --force
+
+#Update environment variable
+$ shipyardctl deploy application -o acme -e test -n example --force --env-var="EXISTING_KEY=NEW_VAL"
+
+#Force fresh deployment of an active revision, a.k.a bouncing a deployment
+$ shipyardctl deploy application -o acme -e test -n example --force`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		if err := RequireAuthToken(); err != nil {
 			return err
@@ -277,32 +287,64 @@ $ shipyardctl deploy application -o acme -e test -n example:4`,
 	Run: func(cmd *cobra.Command, args []string) {
 		vars := parseEnvVars()
 		shipyardEnv := orgName + ":" + envName
-		replicas64 := int64(replicasDeploy)
+		replicas32 := int32(defaultReplicas)
 
 		nameSplit := strings.Split(appName, ":")
-		if len(nameSplit) < 2 {
-			fmt.Printf("Missing required revision number.")
-			return
-		}
 
-		revision, err := strconv.Atoi(nameSplit[1])
-		if err != nil {
-			log.Fatal(err)
-		}
+		if force {
+			updateData := deploymentPatch{}
 
-		status := deployApplication(shipyardEnv, nameSplit[NAME], int32(revision), replicas64, vars)
-		if !CheckIfAuthn(status) {
-			// retry once more
-			status := deployApplication(envName, nameSplit[NAME], int32(revision), replicas64, vars)
-			if status == 401 {
-				fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
-				fmt.Println("Command failed.")
+			// optionally provide revision
+			if len(nameSplit) > 1 {
+				revision, err := strconv.Atoi(nameSplit[1])
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				revision32 := int32(revision)
+				updateData.Revision = &revision32
+			}
+
+			if len(vars) > 0 {
+				updateData.EnvVars = vars
+			}
+
+			status := updateDeployment(shipyardEnv, nameSplit[0], updateData)
+			if !CheckIfAuthn(status) {
+				// retry once more
+				status := updateDeployment(shipyardEnv, nameSplit[0], updateData)
+				if status == 401 {
+					fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
+					fmt.Println("Command failed.")
+				}
+			}
+		} else {
+			if len(nameSplit) < 2 {
+				fmt.Println("Missing required revision number.")
+				fmt.Println("\nIf you are trying to update an active deployment, please use the --force flag.")
+				return
+			}
+
+			revision, err := strconv.Atoi(nameSplit[1])
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			revision32 := int32(revision)
+			status := deployApplication(shipyardEnv, nameSplit[NAME], revision32, replicas32, vars)
+			if !CheckIfAuthn(status) {
+				// retry once more
+				status := deployApplication(envName, nameSplit[NAME], revision32, replicas32, vars)
+				if status == 401 {
+					fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
+					fmt.Println("Command failed.")
+				}
 			}
 		}
 	},
 }
 
-func deployApplication(envName string, depName string, revision int32, replicas int64, vars []EnvVar) int {
+func deployApplication(envName string, depName string, revision int32, replicas int32, vars []EnvVar) int {
 	// prepare arguments in a Deployment struct and Marshal into JSON
 	js, err := json.Marshal(Deployment{depName, revision, replicas, vars})
 	if err != nil {
@@ -342,61 +384,6 @@ func deployApplication(envName string, depName string, revision int32, replicas 
 	}
 
 	return response.StatusCode
-}
-
-// patch/update deployment command
-var updateDeploymentCmd = &cobra.Command{
-	Use:   "deployment -o {org} -e {env} -n {name} --replicas {num}",
-	Short: "updates an active deployment",
-	Long: `Once deployed, a deployment can be updated by passing a JSON object
-with the corresponding mutations. All properties, except for the deployment name are mutable.
-That includes, the public or private hosts, replicas, PTS URL entirely, or the PTS itself.
-
-Example of use:
-$ shipyardctl update deployment shipyardctl update deployment --org acme --env test --name example --replicas 4`,
-	PreRunE: func(cmd *cobra.Command, args []string) error {
-		if err := RequireAuthToken(); err != nil {
-			return err
-		}
-
-		if err := RequireAppName(); err != nil {
-			return err
-		}
-
-		if err := RequireOrgName(); err != nil {
-			return err
-		}
-
-		if err := RequireEnvName(); err != nil {
-			return err
-		}
-
-		return nil
-	},
-	Run: func(cmd *cobra.Command, args []string) {
-		shipyardEnv := orgName + ":" + envName
-		if replicasUpdate == -1 {
-			fmt.Println("Nothing to update. Ending.")
-			return
-		}
-
-		updateData := deploymentPatch{}
-
-		if replicasUpdate != -1 {
-			replicas32 := int32(replicasUpdate)
-			updateData.Replicas = &replicas32
-		}
-
-		status := updateDeployment(shipyardEnv, appName, updateData)
-		if !CheckIfAuthn(status) {
-			// retry once more
-			status := updateDeployment(shipyardEnv, depName, updateData)
-			if status == 401 {
-				fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
-				fmt.Println("Command failed.")
-			}
-		}
-	},
 }
 
 func updateDeployment(envName string, depName string, updateData deploymentPatch) int {
@@ -540,12 +527,8 @@ func init() {
 	deployApplicationCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee organization name")
 	deployApplicationCmd.Flags().StringVarP(&envName, "env", "e", "", "Apigee environment name")
 	deployApplicationCmd.Flags().StringVarP(&appName, "name", "n", "", "name and revision of application to deploy, ex. \"hello:3\"")
+	deployApplicationCmd.Flags().BoolVarP(&force, "force", "f", false, "used to force an update of an active deployment")
 
-	updateCmd.AddCommand(updateDeploymentCmd)
-	updateDeploymentCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee organization name")
-	updateDeploymentCmd.Flags().StringVarP(&envName, "env", "e", "", "Apigee environment name")
-	updateDeploymentCmd.Flags().StringVarP(&appName, "name", "n", "", "name of application deployment to deploy")
-	updateDeploymentCmd.Flags().IntVarP(&replicasUpdate, "replicas", "r", -1, "number of replicas to scale to")
 }
 
 func parseEnvVars() (parsed []EnvVar) {
