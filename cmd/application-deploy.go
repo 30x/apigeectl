@@ -30,8 +30,18 @@ import (
 )
 
 type EnvVar struct {
-	Name  string
-	Value string
+	Name      string
+	Value     string
+	ValueFrom *EnVarSource `json:"valueFrom,omitempty"`
+}
+
+type EnVarSource struct {
+	EdgeConfigRef ConfigRef `json:"edgeConfigRef,omitempty"`
+}
+
+type ConfigRef struct {
+	Name string
+	Key  string
 }
 
 type Deployment struct {
@@ -286,6 +296,7 @@ $ shipyardctl deploy application -o acme -e test -n example --force`,
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		vars := parseEnvVars()
+		vars = append(vars, parseConfigRefs()...)
 		shipyardEnv := orgName + ":" + envName
 		replicas32 := int32(defaultReplicas)
 
@@ -528,6 +539,7 @@ func init() {
 	deployApplicationCmd.Flags().StringVarP(&envName, "env", "e", "", "Apigee environment name")
 	deployApplicationCmd.Flags().StringVarP(&appName, "name", "n", "", "name and revision of application to deploy, ex. \"hello:3\"")
 	deployApplicationCmd.Flags().BoolVarP(&force, "force", "f", false, "used to force an update of an active deployment")
+	deployApplicationCmd.Flags().StringSliceVar(&edgeConfigs, "edge-config", []string{}, "Edge-based configuration value exposed in deployment")
 
 }
 
@@ -538,7 +550,24 @@ func parseEnvVars() (parsed []EnvVar) {
 		for i := range envVars {
 			temp = envVars[i]
 			split := strings.Split(temp, "=")
-			parsed = append(parsed, EnvVar{split[NAME], split[VALUE]})
+			parsed = append(parsed, EnvVar{Name: split[NAME], Value: split[VALUE]})
+		}
+	} else {
+		return []EnvVar{}
+	}
+
+	return parsed
+}
+
+func parseConfigRefs() (parsed []EnvVar) {
+	var temp string
+
+	if len(edgeConfigs) > 0 {
+		for i := range edgeConfigs {
+			temp = edgeConfigs[i]
+			split := strings.Split(temp, "=")
+			valueSplit := strings.Split(split[VALUE], ":")
+			parsed = append(parsed, EnvVar{Name: split[NAME], ValueFrom: &EnVarSource{ConfigRef{valueSplit[NAME], valueSplit[VALUE]}}})
 		}
 	} else {
 		return []EnvVar{}
