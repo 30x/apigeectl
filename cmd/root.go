@@ -45,6 +45,7 @@ var directory string
 var bundlePath string
 var bundleName string
 var force bool
+var edgeConfigs []string
 
 var supportedRuntimes = "node"
 var config *utils.Config
