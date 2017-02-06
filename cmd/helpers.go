@@ -2,9 +2,14 @@ package cmd
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
 	"strings"
+
+	yaml "gopkg.in/yaml.v2"
 )
 
 // RequireOrgName used to short circuit commands
@@ -93,4 +98,72 @@ func PromptAppDeletion(name string) (bool, error) {
 	}
 
 	return false, nil
+}
+
+func formatOutput(format string, body io.ReadCloser) ([]byte, error) {
+	var dat interface{}
+
+	buf, err := ioutil.ReadAll(body)
+	if err != nil {
+		return nil, err
+	}
+
+	switch format {
+	case "json":
+		err = json.Unmarshal(buf, &dat)
+		if err != nil {
+			return nil, err
+		}
+
+		return json.MarshalIndent(dat, "", "  ")
+	case "yaml":
+		err = yaml.Unmarshal(buf, &dat)
+		if err != nil {
+			return nil, err
+		}
+
+		return yaml.Marshal(dat)
+	case "raw":
+		return buf, nil
+	default:
+		return nil, nil
+	}
+}
+
+func outputBasedOnStatus(success string, failure string, body io.ReadCloser, status int, format string) {
+	if status == 200 || status == 201 || status == 204 {
+		if success != "" {
+			fmt.Println(success)
+		}
+
+		out, err := formatOutput(format, body)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		if body != nil {
+			fmt.Println(string(out))
+		}
+	} else if status == 401 {
+		return // we handle this special
+	} else if status == 404 {
+		if failure != "" {
+			fmt.Println(failure)
+		}
+
+		fmt.Println("Received a 404. Resource not found.")
+	} else {
+		if failure != "" {
+			fmt.Println(failure)
+		}
+
+		out, err := formatOutput(format, body)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		if body != nil {
+			fmt.Println(string(out))
+		}
+	}
 }

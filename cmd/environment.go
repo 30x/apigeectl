@@ -50,6 +50,10 @@ $ shipyardctl get environment org1:env1 --token <token>`,
 			return err
 		}
 
+		if format == "" {
+			format = "raw"
+		}
+
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
@@ -85,12 +89,10 @@ func getEnvironment(envName string) int {
 
 	defer response.Body.Close()
 
-	if response.StatusCode != 401 {
-		_, err = io.Copy(os.Stdout, response.Body)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
+	success := fmt.Sprintf("\nAvailable information for %s:", envName)
+	failure := fmt.Sprintf("\nThere was an error retrieving %s", envName)
+
+	outputBasedOnStatus(success, failure, response.Body, response.StatusCode, format)
 
 	return response.StatusCode
 }
@@ -168,6 +170,7 @@ func init() {
 	getCmd.AddCommand(environmentCmd)
 	environmentCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee organization name")
 	environmentCmd.Flags().StringVarP(&envName, "env", "e", "", "Apigee environment name")
+	environmentCmd.Flags().StringVarP(&format, "format", "f", "", "output format: json,yaml,raw")
 
 	syncCmd.AddCommand(syncEnvCmd)
 	syncEnvCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee organization name")

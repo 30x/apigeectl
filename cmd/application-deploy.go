@@ -22,9 +22,8 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strings"
-
 	"strconv"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -78,8 +77,10 @@ $ shipyardctl get deployment -o acme -e test -n example`,
 			return err
 		}
 
-		if err := RequireAppName(); err != nil {
-			return err
+		if !all {
+			if err := RequireAppName(); err != nil {
+				return err
+			}
 		}
 
 		if err := RequireOrgName(); err != nil {
@@ -88,6 +89,10 @@ $ shipyardctl get deployment -o acme -e test -n example`,
 
 		if err := RequireEnvName(); err != nil {
 			return err
+		}
+
+		if format == "" { // default to json for deployment retrieval
+			format = "json"
 		}
 
 		return nil
@@ -142,12 +147,9 @@ func getDeploymentNamed(envName string, depName string) int {
 	// dump response body to stdout
 	defer response.Body.Close()
 
-	if response.StatusCode != 401 {
-		_, err = io.Copy(os.Stdout, response.Body)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
+	failure := fmt.Sprintf("\nThere was a problem retrieving %s in %s", depName, envName)
+
+	outputBasedOnStatus("", failure, response.Body, response.StatusCode, format)
 
 	return response.StatusCode
 }
@@ -171,12 +173,9 @@ func getDeploymentAll(envName string) int {
 
 	defer response.Body.Close()
 
-	if response.StatusCode != 401 {
-		_, err = io.Copy(os.Stdout, response.Body)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
+	failure := fmt.Sprintf("\nThere was a problem retrieving deplopyments in %s", envName)
+
+	outputBasedOnStatus("", failure, response.Body, response.StatusCode, format)
 
 	return response.StatusCode
 }
@@ -243,16 +242,11 @@ func undeployApplication(envName string, depName string) int {
 
 	// dump response body to stdout
 	defer response.Body.Close()
-	if response.StatusCode >= 200 && response.StatusCode < 300 {
-		fmt.Println("\nUndeployment of " + depName + " in " + envName + " was successful\n")
-	}
 
-	if response.StatusCode != 401 {
-		_, err = io.Copy(os.Stdout, response.Body)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
+	success := fmt.Sprintf("\nUndeployment of %s in %s was successful", depName, envName)
+	failure := fmt.Sprintf("\nThere was a problem undeploying %s in %s", depName, envName)
+
+	outputBasedOnStatus(success, failure, response.Body, response.StatusCode, format)
 
 	return response.StatusCode
 }
@@ -383,16 +377,11 @@ func deployApplication(envName string, depName string, revision int32, replicas 
 
 	// dump response to stdout
 	defer response.Body.Close()
-	if response.StatusCode >= 200 && response.StatusCode < 300 {
-		fmt.Println("\nCreation of " + depName + " in " + envName + " was successful\n")
-	}
 
-	if response.StatusCode != 401 {
-		_, err = io.Copy(os.Stdout, response.Body)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
+	success := fmt.Sprintf("\nCreation of %s in %s was successful", depName, envName)
+	failure := fmt.Sprintf("\nThere was a problem deploying %s in %s", depName, envName)
+
+	outputBasedOnStatus(success, failure, response.Body, response.StatusCode, format)
 
 	return response.StatusCode
 }
@@ -422,16 +411,11 @@ func updateDeployment(envName string, depName string, updateData deploymentPatch
 	}
 
 	defer response.Body.Close()
-	if response.StatusCode >= 200 && response.StatusCode < 300 {
-		fmt.Println("\nPatch of " + depName + " in " + envName + " was successful\n")
-	}
 
-	if response.StatusCode != 401 {
-		_, err = io.Copy(os.Stdout, response.Body)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
+	success := fmt.Sprintf("\nUpdate of %s in %s was successful", depName, envName)
+	failure := fmt.Sprintf("\nThere was a problem updating %s in %s", depName, envName)
+
+	outputBasedOnStatus(success, failure, response.Body, response.StatusCode, format)
 
 	return response.StatusCode
 }
@@ -521,6 +505,7 @@ func init() {
 	getDeploymentCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee organization name")
 	getDeploymentCmd.Flags().StringVarP(&envName, "env", "e", "", "Apigee environment name")
 	getDeploymentCmd.Flags().StringVarP(&appName, "name", "n", "", "name of application deployment to retrieve")
+	getDeploymentCmd.Flags().StringVarP(&format, "format", "f", "", "output format for response: json, yaml, raw")
 
 	getCmd.AddCommand(logsCmd)
 	logsCmd.Flags().BoolVarP(&previous, "previous", "p", false, "used to retrieve previous container's logs")
@@ -538,8 +523,9 @@ func init() {
 	deployApplicationCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee organization name")
 	deployApplicationCmd.Flags().StringVarP(&envName, "env", "e", "", "Apigee environment name")
 	deployApplicationCmd.Flags().StringVarP(&appName, "name", "n", "", "name and revision of application to deploy, ex. \"hello:3\"")
-	deployApplicationCmd.Flags().BoolVarP(&force, "force", "f", false, "used to force an update of an active deployment")
 	deployApplicationCmd.Flags().StringSliceVar(&edgeConfigs, "edge-config", []string{}, "Edge-based configuration value exposed in deployment")
+	deployApplicationCmd.Flags().BoolVar(&force, "force", false, "used to force an update of an active deployment")
+	deployApplicationCmd.Flags().StringVarP(&format, "format", "f", "", "output format for response: json, yaml, raw")
 
 }
 

@@ -52,6 +52,10 @@ $ shipyardctl get application --org org1`,
 			return err
 		}
 
+		if format == "" {
+			format = "raw"
+		}
+
 		MakeBuildPath()
 
 		return nil
@@ -87,12 +91,10 @@ func getApplications() int {
 	}
 
 	defer response.Body.Close()
-	if response.StatusCode != 401 {
-		_, err = io.Copy(os.Stdout, response.Body)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
+	success := fmt.Sprint("\nAvailable applications:\n")
+	failure := fmt.Sprintf("\nThere was an error retrieving your imported applications")
+
+	outputBasedOnStatus(success, failure, response.Body, response.StatusCode, format)
 
 	return response.StatusCode
 }
@@ -117,6 +119,10 @@ $ shipyardctl get application --org org1 --name exampleApp`,
 
 		if err := RequireAppName(); err != nil {
 			return err
+		}
+
+		if format == "" {
+			format = "raw"
 		}
 
 		MakeBuildPath()
@@ -163,13 +169,10 @@ func getApplication(name string, appspace string) int {
 		PrintVerboseResponse(response)
 	}
 
-	defer response.Body.Close()
-	if response.StatusCode != 401 {
-		_, err = io.Copy(os.Stdout, response.Body)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
+	success := fmt.Sprintf("\nAvailable info for %s in %s:\n", name, appspace)
+	failure := fmt.Sprintf("\nThere was an error retrieving %s from %s", name, appspace)
+
+	outputBasedOnStatus(success, failure, response.Body, response.StatusCode, format)
 
 	return response.StatusCode
 }
@@ -344,6 +347,10 @@ $ shipyardctl delete application -n example:1 --org org1`,
 			}
 		}
 
+		if format == "" {
+			format = "raw"
+		}
+
 		MakeBuildPath()
 
 		return nil
@@ -377,7 +384,7 @@ $ shipyardctl delete application -n example:1 --org org1`,
 				fmt.Println("Command failed.")
 			}
 		} else if status == http.StatusConflict {
-			fmt.Println("\nPlease use the --force flag or use the undeploy command first if you wish to undeploy and delete the application")
+			fmt.Println("Please use the --force flag or use the undeploy command first if you wish to undeploy and delete the application")
 		}
 	},
 }
@@ -402,15 +409,13 @@ func deleteApp(appName string) int {
 	defer response.Body.Close()
 
 	if response.StatusCode == 200 {
-		fmt.Printf("Deletion of application %s successful.\n", appName)
+
 	}
 
-	if response.StatusCode != 401 {
-		_, err = io.Copy(os.Stdout, response.Body)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
+	success := fmt.Sprintf("\nDeletion of application %s successful.", appName)
+	failure := fmt.Sprintf("\nThere was an error deleting %s.", appName)
+
+	outputBasedOnStatus(success, failure, response.Body, response.StatusCode, format)
 
 	return response.StatusCode
 }
@@ -418,10 +423,12 @@ func deleteApp(appName string) int {
 func init() {
 	getCmd.AddCommand(getApplicationsCmd)
 	getApplicationsCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee org name")
+	getApplicationsCmd.Flags().StringVarP(&format, "format", "f", "", "output format: json,yaml,raw")
 
 	getCmd.AddCommand(getApplicationCmd)
 	getApplicationCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee org name")
 	getApplicationCmd.Flags().StringVarP(&appName, "name", "n", "", "application name to retrieve and optional revision, ex. my-app[:4]")
+	getApplicationCmd.Flags().StringVarP(&format, "format", "f", "", "output format: json,yaml,raw")
 
 	importCmd.AddCommand(importAppCmd)
 	importAppCmd.Flags().StringSliceVar(&envVars, "env-var", []string{}, "Environment variable to set in the built image \"KEY=VAL\" ")
@@ -435,6 +442,7 @@ func init() {
 	deleteAppCmd.Flags().StringVarP(&envName, "env", "e", "", "Apigee environment name (only necessary when forcing)")
 	deleteAppCmd.Flags().StringVarP(&appName, "name", "n", "", "Name of application to be deleted")
 	deleteAppCmd.Flags().BoolVar(&force, "force", false, "forces the deletion of all app revisions and any active deployments")
+	deleteAppCmd.Flags().StringVarP(&format, "format", "f", "", "output format: json,yaml,raw")
 }
 
 func isSupportedRuntime(input string) bool {
