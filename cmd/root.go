@@ -24,7 +24,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var verbose bool
+var debug bool
 
 // global variables used by most commands
 var all bool
@@ -47,7 +47,7 @@ var bundleName string
 var force bool
 var edgeConfigs []string
 var format string
-var streamBuild bool
+var verbose bool
 
 var supportedRuntimes = "node"
 var config *utils.Config
@@ -74,7 +74,7 @@ func Execute() {
 }
 
 func init() {
-	RootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Print environment variables used and API calls made")
+	RootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "Print the request & response headers from API calls")
 	RootCmd.PersistentFlags().StringVarP(&authToken, "token", "t", "", "Apigee auth token. Required. Or place in APIGEE_TOKEN.")
 
 	// check if there is a config file present
@@ -114,8 +114,8 @@ func init() {
 	enroberPath = "/environments"
 }
 
-// PrintVerboseRequest used to print the request when using verbose
-func PrintVerboseRequest(req *http.Request) {
+// PrintDebugRequest used to print the request when using debug
+func PrintDebugRequest(req *http.Request) {
 	context := config.GetCurrentContext()
 	fmt.Println("Current context:")
 	if ct := os.Getenv("CLUSTER_TARGET"); ct != "" {
@@ -149,8 +149,8 @@ func PrintVerboseRequest(req *http.Request) {
 	fmt.Printf("%s\n", string(dump))
 }
 
-// PrintVerboseResponse used to print the response when using verbose
-func PrintVerboseResponse(res *http.Response) {
+// PrintDebugResponse used to print the response when using debug
+func PrintDebugResponse(res *http.Response) {
 	if res != nil {
 		fmt.Println("\nResponse:")
 		dump, err := httputil.DumpResponse(res, false)

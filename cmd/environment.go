@@ -68,8 +68,8 @@ $ shipyardctl get environment -o acme -e test`,
 
 func getEnvironment(envName string) int {
 	req, err := http.NewRequest("GET", clusterTarget+enroberPath+"/"+envName, nil)
-	if verbose {
-		PrintVerboseRequest(req)
+	if debug {
+		PrintDebugRequest(req)
 	}
 
 	req.Header.Set("Authorization", "Bearer "+authToken)
@@ -79,8 +79,8 @@ func getEnvironment(envName string) int {
 		log.Fatal(err)
 	}
 
-	if verbose {
-		PrintVerboseResponse(response)
+	if debug {
+		PrintDebugResponse(response)
 	}
 
 	defer response.Body.Close()
@@ -132,8 +132,8 @@ $ shipyardctl sync environment -o acme -e test`,
 func syncEnv(envName string) int {
 	req, err := http.NewRequest("PATCH", clusterTarget+enroberPath+"/"+envName, nil)
 
-	if verbose {
-		PrintVerboseRequest(req)
+	if debug {
+		PrintDebugRequest(req)
 	}
 
 	req.Header.Set("Authorization", "Bearer "+authToken)
@@ -143,8 +143,8 @@ func syncEnv(envName string) int {
 		log.Fatal(err)
 	}
 
-	if verbose {
-		PrintVerboseResponse(response)
+	if debug {
+		PrintDebugResponse(response)
 	}
 
 	defer response.Body.Close()

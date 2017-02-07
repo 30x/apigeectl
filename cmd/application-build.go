@@ -78,8 +78,8 @@ $ shipyardctl get application --org org1`,
 
 func getApplications() int {
 	req, err := http.NewRequest("GET", clusterTarget+basePath, nil)
-	if verbose {
-		PrintVerboseRequest(req)
+	if debug {
+		PrintDebugRequest(req)
 	}
 
 	req.Header.Set("Authorization", "Bearer "+authToken)
@@ -89,8 +89,8 @@ func getApplications() int {
 		log.Fatal(err)
 	}
 
-	if verbose {
-		PrintVerboseResponse(response)
+	if debug {
+		PrintDebugResponse(response)
 	}
 
 	defer response.Body.Close()
@@ -161,8 +161,8 @@ func getApplication(name string, appspace string) int {
 		req, err = http.NewRequest("GET", clusterTarget+basePath+"/"+nameSplit[0], nil)
 	}
 
-	if verbose {
-		PrintVerboseRequest(req)
+	if debug {
+		PrintDebugRequest(req)
 	}
 
 	req.Header.Set("Authorization", "Bearer "+authToken)
@@ -172,8 +172,8 @@ func getApplication(name string, appspace string) int {
 		log.Fatal(err)
 	}
 
-	if verbose {
-		PrintVerboseResponse(response)
+	if debug {
+		PrintDebugResponse(response)
 	}
 
 	success := fmt.Sprintf("\nAvailable info for %s in %s:\n", name, appspace)
@@ -293,8 +293,8 @@ func importApp(appName string, directory string) int {
 		log.Fatal(err)
 	}
 
-	if verbose {
-		PrintVerboseRequest(req)
+	if debug {
+		PrintDebugRequest(req)
 	}
 
 	req.Header.Set("Authorization", "Bearer "+authToken)
@@ -305,15 +305,15 @@ func importApp(appName string, directory string) int {
 		log.Fatal(err)
 	}
 
-	if verbose {
-		PrintVerboseResponse(response)
+	if debug {
+		PrintDebugResponse(response)
 	}
 
 	// dump response to stdout
 	defer response.Body.Close()
 	if response.StatusCode == 201 {
 		fmt.Println("\nBeginning application import. This could take a minute.")
-		err = handleBuildStream(response.Body, streamBuild)
+		err = handleBuildStream(response.Body, verbose)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -396,8 +396,8 @@ $ shipyardctl delete application -n example:1 --org org1`,
 
 func deleteApp(appName string) int {
 	req, err := http.NewRequest("DELETE", clusterTarget+basePath+"/"+appName, nil)
-	if verbose {
-		PrintVerboseRequest(req)
+	if debug {
+		PrintDebugRequest(req)
 	}
 
 	req.Header.Set("Authorization", "Bearer "+authToken)
@@ -407,8 +407,8 @@ func deleteApp(appName string) int {
 		log.Fatal(err)
 	}
 
-	if verbose {
-		PrintVerboseResponse(response)
+	if debug {
+		PrintDebugResponse(response)
 	}
 
 	defer response.Body.Close()
@@ -441,7 +441,7 @@ func init() {
 	importAppCmd.Flags().StringVarP(&runtime, "runtime", "u", "node:4", "Runtime to use for application and optional version, ex. node[:5]")
 	importAppCmd.Flags().StringVarP(&appName, "name", "n", "", "application name and optional revision")
 	importAppCmd.Flags().StringVarP(&directory, "directory", "d", "", "directory of application source archive")
-	importAppCmd.Flags().BoolVarP(&streamBuild, "stream-build", "b", false, "stream build output to console")
+	importAppCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "stream build output to console")
 
 	deleteCmd.AddCommand(deleteAppCmd)
 	deleteAppCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee org name")
@@ -466,7 +466,9 @@ func handleBuildStream(stream io.ReadCloser, outputToConsole bool) error {
 			fmt.Println(line)
 		}
 
-		data.WriteString(line + "\n")
+		if !outputToConsole {
+			data.WriteString(line + "\n")
+		}
 	}
 
 	if err := scanner.Err(); err != nil {
