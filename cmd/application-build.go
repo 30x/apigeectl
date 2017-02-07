@@ -24,7 +24,10 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
+
+	"bufio"
 
 	"github.com/30x/zipper"
 	"github.com/spf13/cobra"
@@ -309,10 +312,12 @@ func importApp(appName string, directory string) int {
 	// dump response to stdout
 	defer response.Body.Close()
 	if response.StatusCode == 201 {
-		fmt.Println("\nApplication import successful\n")
-	}
-
-	if response.StatusCode != 401 {
+		fmt.Println("\nBeginning application import. This could take a minute.")
+		err = handleBuildStream(response.Body, streamBuild)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else if response.StatusCode != 401 {
 		_, err = io.Copy(os.Stdout, response.Body)
 		if err != nil {
 			log.Fatal(err)
@@ -436,6 +441,7 @@ func init() {
 	importAppCmd.Flags().StringVarP(&runtime, "runtime", "u", "node:4", "Runtime to use for application and optional version, ex. node[:5]")
 	importAppCmd.Flags().StringVarP(&appName, "name", "n", "", "application name and optional revision")
 	importAppCmd.Flags().StringVarP(&directory, "directory", "d", "", "directory of application source archive")
+	importAppCmd.Flags().BoolVarP(&streamBuild, "stream-build", "b", false, "stream build output to console")
 
 	deleteCmd.AddCommand(deleteAppCmd)
 	deleteAppCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee org name")
@@ -446,4 +452,39 @@ func init() {
 
 func isSupportedRuntime(input string) bool {
 	return strings.Contains(supportedRuntimes, input)
+}
+
+func handleBuildStream(stream io.ReadCloser, outputToConsole bool) error {
+	var line string
+	var data bytes.Buffer
+	scanner := bufio.NewScanner(stream)
+
+	for scanner.Scan() {
+		line = scanner.Text()
+
+		if outputToConsole {
+			fmt.Println(line)
+		}
+
+		data.WriteString(line + "\n")
+	}
+
+	if err := scanner.Err(); err != nil {
+		return err
+	}
+
+	if match, _ := regexp.MatchString("Organization: [a-z0-9]+ | Application: [a-z0-9]+ | Revision: [a-z0-9]+", line); !match {
+		if !outputToConsole {
+			return fmt.Errorf("There was a problem during the build. Build output:\n%s\nPlease refer to the above build output", data.String())
+		}
+
+		// else
+		return fmt.Errorf("There was a problem during the build. Refer to the build stream")
+	}
+
+	if !outputToConsole {
+		fmt.Println(line) // print last scanned line
+	}
+
+	return nil
 }
