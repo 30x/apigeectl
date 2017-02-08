@@ -104,6 +104,18 @@ func PromptAppDeletion(name string) (bool, error) {
 	return false, nil
 }
 
+func templateParseDeploymentStatus(conditions []interface{}) bool {
+	for _, cond := range conditions {
+		if cond.(map[string]interface{})["reason"] == "MinimumReplicasAvailable" {
+			if cond.(map[string]interface{})["status"] == "True" {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
 func templateParseRevision(labels map[string]interface{}) interface{} {
 	return labels["edge/app.rev"]
 }
@@ -111,6 +123,7 @@ func templateParseRevision(labels map[string]interface{}) interface{} {
 func columnizeOutput(format string, data interface{}, temp string) ([]byte, error) {
 	funcMap := template.FuncMap{
 		"revision": templateParseRevision,
+		"status":   templateParseDeploymentStatus,
 	}
 
 	tempGen, err := template.New("tempGen").Funcs(funcMap).Parse(temp)

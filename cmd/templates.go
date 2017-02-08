@@ -87,23 +87,23 @@ var PROXY_XML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 </APIProxy>
 `
 
-var GET_APP = `AVAILABLE REVISIONS
+var GET_APP = `REVISIONS
 {{ range .}}{{.revision}}
 {{end}}`
 
-var GET_APPS = `AVAILABLE APPLICATIONS
+var GET_APPS = `NAME
 {{ range .}}{{.name}}
 {{end}}`
 
-var GET_APP_REV = `REVISION | CREATED | IMAGE-ID
-{{.revision}} | {{.created}} | {{.imageId}}`
+var GET_APP_REV = `REVISION | CREATED
+{{.revision}} | {{.created}}`
 
-var GET_DEPS = `NAME | CREATED | APP-REVISION
-{{ range .items }}{{.metadata.name}} | {{.metadata.creationTimestamp}} | {{revision .metadata.labels}}
+var GET_DEPS = `APPLICATION | CREATED | DEPLOYMENT REVISION | AVAILABLE
+{{ range .items }}{{.metadata.name}}:{{revision .metadata.labels}} | {{.metadata.creationTimestamp}} | {{.metadata.generation}} | {{status .status.conditions}}
 {{end}}`
 
-var GET_DEP = `NAME | CREATED | APP-REVISION
-{{.metadata.name}} | {{.metadata.creationTimestamp}} | {{revision .metadata.labels}}`
+var GET_DEP = `APPLICATION | CREATED | DEPLOYMENT REVISION | AVAILABLE
+{{.metadata.name}}:{{revision .metadata.labels}} | {{.metadata.creationTimestamp}} | {{.metadata.generation}} | {{status .status.conditions}}`
 
 var GET_ENV = `NAME | EDGE HOSTS | API SECRET
 {{.name}} | {{.edgeHosts}} | {{.apiSecret}}`
