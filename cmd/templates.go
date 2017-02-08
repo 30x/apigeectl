@@ -104,3 +104,6 @@ var GET_DEPS = `NAME | CREATED | APP-REVISION
 
 var GET_DEP = `NAME | CREATED | APP-REVISION
 {{.metadata.name}} | {{.metadata.creationTimestamp}} | {{revision .metadata.labels}}`
+
+var GET_ENV = `NAME | EDGE HOSTS | API SECRET
+{{.name}} | {{.edgeHosts}} | {{.apiSecret}}`

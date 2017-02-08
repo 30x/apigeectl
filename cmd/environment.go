@@ -32,11 +32,7 @@ var environmentCmd = &cobra.Command{
 	Long: `Given an environment name, this will retrieve the available information of the
 active environment(s) in JSON format. Example usage looks like:
 
-$ shipyardctl get environment -o acme -e test
-
-OR
-
-$ shipyardctl get environment org1:env1 --token <token>`,
+$ shipyardctl get environment -o acme -e test`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		if err := RequireAuthToken(); err != nil {
 			return err
@@ -51,7 +47,7 @@ $ shipyardctl get environment org1:env1 --token <token>`,
 		}
 
 		if format == "" {
-			format = "raw"
+			format = "get-env"
 		}
 
 		return nil

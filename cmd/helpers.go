@@ -171,6 +171,8 @@ func formatOutput(format string, body io.ReadCloser) ([]byte, error) {
 		return columnizeOutput(format, dat, GET_DEP)
 	case "get-deps":
 		return columnizeOutput(format, dat, GET_DEPS)
+	case "get-env":
+		return columnizeOutput(format, dat, GET_ENV)
 	default:
 		return nil, nil
 	}
