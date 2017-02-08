@@ -190,6 +190,19 @@ func outputBasedOnStatus(success string, failure string, body io.ReadCloser, sta
 		}
 	} else if status == 401 {
 		return // we handle this special
+	} else if status == 403 {
+		if failure != "" {
+			fmt.Println(failure)
+		}
+
+		out, err := formatOutput("raw", body)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		if out != nil {
+			fmt.Println(string(out))
+		}
 	} else if status == 404 {
 		if failure != "" {
 			fmt.Println(failure)
