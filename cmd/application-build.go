@@ -53,7 +53,7 @@ $ shipyardctl get application --org org1`,
 		}
 
 		if format == "" {
-			format = "raw"
+			format = "get-apps"
 		}
 
 		MakeBuildPath()
@@ -121,10 +121,6 @@ $ shipyardctl get application --org org1 --name exampleApp`,
 			return err
 		}
 
-		if format == "" {
-			format = "raw"
-		}
-
 		MakeBuildPath()
 
 		return nil
@@ -149,8 +145,16 @@ func getApplication(name string, appspace string) int {
 	var err error
 
 	if len(nameSplit) > 1 {
+		if format == "" {
+			format = "get-app-rev"
+		}
+
 		req, err = http.NewRequest("GET", clusterTarget+basePath+"/"+nameSplit[0]+"/version/"+nameSplit[1], nil)
 	} else {
+		if format == "" {
+			format = "get-app"
+		}
+
 		req, err = http.NewRequest("GET", clusterTarget+basePath+"/"+nameSplit[0], nil)
 	}
 
@@ -347,10 +351,6 @@ $ shipyardctl delete application -n example:1 --org org1`,
 			}
 		}
 
-		if format == "" {
-			format = "raw"
-		}
-
 		MakeBuildPath()
 
 		return nil
@@ -442,7 +442,6 @@ func init() {
 	deleteAppCmd.Flags().StringVarP(&envName, "env", "e", "", "Apigee environment name (only necessary when forcing)")
 	deleteAppCmd.Flags().StringVarP(&appName, "name", "n", "", "Name of application to be deleted")
 	deleteAppCmd.Flags().BoolVar(&force, "force", false, "forces the deletion of all app revisions and any active deployments")
-	deleteAppCmd.Flags().StringVarP(&format, "format", "f", "", "output format: json,yaml,raw")
 }
 
 func isSupportedRuntime(input string) bool {

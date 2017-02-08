@@ -4,11 +4,15 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"io"
 	"io/ioutil"
 	"os"
 	"strings"
 
+	"bytes"
+
+	"github.com/ryanuber/columnize"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -100,6 +104,31 @@ func PromptAppDeletion(name string) (bool, error) {
 	return false, nil
 }
 
+func templateParseRevision(labels map[string]interface{}) interface{} {
+	return labels["edge/app.rev"]
+}
+
+func columnizeOutput(format string, data interface{}, temp string) ([]byte, error) {
+	funcMap := template.FuncMap{
+		"revision": templateParseRevision,
+	}
+
+	tempGen, err := template.New("tempGen").Funcs(funcMap).Parse(temp)
+	if err != nil {
+		return nil, err
+	}
+
+	var buffer bytes.Buffer
+	err = tempGen.Execute(&buffer, data)
+	if err != nil {
+		return nil, err
+	}
+
+	out := columnize.SimpleFormat(strings.Split(buffer.String(), "\n"))
+
+	return []byte(out), nil
+}
+
 func formatOutput(format string, body io.ReadCloser) ([]byte, error) {
 	var dat interface{}
 
@@ -108,13 +137,19 @@ func formatOutput(format string, body io.ReadCloser) ([]byte, error) {
 		return nil, err
 	}
 
-	switch format {
-	case "json":
+	if len(buf) == 0 {
+		return nil, nil
+	}
+
+	if format != "yaml" { // unmarshal via json once so this code isn't copied several times
 		err = json.Unmarshal(buf, &dat)
 		if err != nil {
 			return nil, err
 		}
+	}
 
+	switch format {
+	case "json":
 		return json.MarshalIndent(dat, "", "  ")
 	case "yaml":
 		err = yaml.Unmarshal(buf, &dat)
@@ -125,6 +160,17 @@ func formatOutput(format string, body io.ReadCloser) ([]byte, error) {
 		return yaml.Marshal(dat)
 	case "raw":
 		return buf, nil
+	// human readables
+	case "get-app":
+		return columnizeOutput(format, dat, GET_APP)
+	case "get-app-rev":
+		return columnizeOutput(format, dat, GET_APP_REV)
+	case "get-apps":
+		return columnizeOutput(format, dat, GET_APPS)
+	case "get-dep":
+		return columnizeOutput(format, dat, GET_DEP)
+	case "get-deps":
+		return columnizeOutput(format, dat, GET_DEPS)
 	default:
 		return nil, nil
 	}
@@ -132,16 +178,14 @@ func formatOutput(format string, body io.ReadCloser) ([]byte, error) {
 
 func outputBasedOnStatus(success string, failure string, body io.ReadCloser, status int, format string) {
 	if status == 200 || status == 201 || status == 204 {
-		if success != "" {
+		if success != "" && format == "" {
 			fmt.Println(success)
 		}
 
 		out, err := formatOutput(format, body)
 		if err != nil {
 			fmt.Println(err)
-		}
-
-		if body != nil {
+		} else if out != nil {
 			fmt.Println(string(out))
 		}
 	} else if status == 401 {
@@ -162,7 +206,7 @@ func outputBasedOnStatus(success string, failure string, body io.ReadCloser, sta
 			fmt.Println(err)
 		}
 
-		if body != nil {
+		if out != nil {
 			fmt.Println(string(out))
 		}
 	}

@@ -81,6 +81,10 @@ $ shipyardctl get deployment -o acme -e test -n example`,
 			if err := RequireAppName(); err != nil {
 				return err
 			}
+
+			if format == "" {
+				format = "get-dep"
+			}
 		}
 
 		if err := RequireOrgName(); err != nil {
@@ -91,8 +95,8 @@ $ shipyardctl get deployment -o acme -e test -n example`,
 			return err
 		}
 
-		if format == "" { // default to json for deployment retrieval
-			format = "json"
+		if format == "" {
+			format = "get-deps"
 		}
 
 		return nil
@@ -147,7 +151,7 @@ func getDeploymentNamed(envName string, depName string) int {
 	// dump response body to stdout
 	defer response.Body.Close()
 
-	failure := fmt.Sprintf("\nThere was a problem retrieving %s in %s", depName, envName)
+	failure := fmt.Sprintf("There was a problem retrieving %s in %s", depName, envName)
 
 	outputBasedOnStatus("", failure, response.Body, response.StatusCode, format)
 
@@ -173,7 +177,7 @@ func getDeploymentAll(envName string) int {
 
 	defer response.Body.Close()
 
-	failure := fmt.Sprintf("\nThere was a problem retrieving deplopyments in %s", envName)
+	failure := fmt.Sprintf("There was a problem retrieving deplopyments in %s", envName)
 
 	outputBasedOnStatus("", failure, response.Body, response.StatusCode, format)
 
@@ -243,8 +247,8 @@ func undeployApplication(envName string, depName string) int {
 	// dump response body to stdout
 	defer response.Body.Close()
 
-	success := fmt.Sprintf("\nUndeployment of %s in %s was successful", depName, envName)
-	failure := fmt.Sprintf("\nThere was a problem undeploying %s in %s", depName, envName)
+	success := fmt.Sprintf("Undeployment of %s in %s was successful", depName, envName)
+	failure := fmt.Sprintf("There was a problem undeploying %s in %s", depName, envName)
 
 	outputBasedOnStatus(success, failure, response.Body, response.StatusCode, format)
 
@@ -378,8 +382,8 @@ func deployApplication(envName string, depName string, revision int32, replicas 
 	// dump response to stdout
 	defer response.Body.Close()
 
-	success := fmt.Sprintf("\nCreation of %s in %s was successful", depName, envName)
-	failure := fmt.Sprintf("\nThere was a problem deploying %s in %s", depName, envName)
+	success := fmt.Sprintf("Creation of %s in %s was successful", depName, envName)
+	failure := fmt.Sprintf("There was a problem deploying %s in %s", depName, envName)
 
 	outputBasedOnStatus(success, failure, response.Body, response.StatusCode, format)
 
@@ -412,8 +416,8 @@ func updateDeployment(envName string, depName string, updateData deploymentPatch
 
 	defer response.Body.Close()
 
-	success := fmt.Sprintf("\nUpdate of %s in %s was successful", depName, envName)
-	failure := fmt.Sprintf("\nThere was a problem updating %s in %s", depName, envName)
+	success := fmt.Sprintf("Update of %s in %s was successful", depName, envName)
+	failure := fmt.Sprintf("There was a problem updating %s in %s", depName, envName)
 
 	outputBasedOnStatus(success, failure, response.Body, response.StatusCode, format)
 

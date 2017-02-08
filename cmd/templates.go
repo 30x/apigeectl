@@ -86,3 +86,21 @@ var PROXY_XML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
     <validate>false</validate>
 </APIProxy>
 `
+
+var GET_APP = `AVAILABLE REVISIONS
+{{ range .}}{{.revision}}
+{{end}}`
+
+var GET_APPS = `AVAILABLE APPLICATIONS
+{{ range .}}{{.name}}
+{{end}}`
+
+var GET_APP_REV = `REVISION | CREATED | IMAGE-ID
+{{.revision}} | {{.created}} | {{.imageId}}`
+
+var GET_DEPS = `NAME | CREATED | APP-REVISION
+{{ range .items }}{{.metadata.name}} | {{.metadata.creationTimestamp}} | {{revision .metadata.labels}}
+{{end}}`
+
+var GET_DEP = `NAME | CREATED | APP-REVISION
+{{.metadata.name}} | {{.metadata.creationTimestamp}} | {{revision .metadata.labels}}`
