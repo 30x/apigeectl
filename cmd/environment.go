@@ -32,11 +32,7 @@ var environmentCmd = &cobra.Command{
 	Long: `Given an environment name, this will retrieve the available information of the
 active environment(s) in JSON format. Example usage looks like:
 
-$ shipyardctl get environment -o acme -e test
-
-OR
-
-$ shipyardctl get environment org1:env1 --token <token>`,
+$ shipyardctl get environment -o acme -e test`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		if err := RequireAuthToken(); err != nil {
 			return err
@@ -48,6 +44,10 @@ $ shipyardctl get environment org1:env1 --token <token>`,
 
 		if err := RequireOrgName(); err != nil {
 			return err
+		}
+
+		if format == "" {
+			format = "get-env"
 		}
 
 		return nil
@@ -85,12 +85,10 @@ func getEnvironment(envName string) int {
 
 	defer response.Body.Close()
 
-	if response.StatusCode != 401 {
-		_, err = io.Copy(os.Stdout, response.Body)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
+	success := fmt.Sprintf("\nAvailable information for %s:", envName)
+	failure := fmt.Sprintf("\nThere was an error retrieving %s", envName)
+
+	outputBasedOnStatus(success, failure, response.Body, response.StatusCode, format)
 
 	return response.StatusCode
 }
@@ -168,6 +166,7 @@ func init() {
 	getCmd.AddCommand(environmentCmd)
 	environmentCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee organization name")
 	environmentCmd.Flags().StringVarP(&envName, "env", "e", "", "Apigee environment name")
+	environmentCmd.Flags().StringVar(&format, "format", "", "output format: json,yaml,raw")
 
 	syncCmd.AddCommand(syncEnvCmd)
 	syncEnvCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee organization name")

@@ -86,3 +86,24 @@ var PROXY_XML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
     <validate>false</validate>
 </APIProxy>
 `
+
+var GET_APP = `REVISIONS
+{{ range .}}{{.revision}}
+{{end}}`
+
+var GET_APPS = `NAME
+{{ range .}}{{.name}}
+{{end}}`
+
+var GET_APP_REV = `REVISION | CREATED
+{{.revision}} | {{.created}}`
+
+var GET_DEPS = `APPLICATION | CREATED | DEPLOYMENT REVISION | AVAILABLE
+{{ range .items }}{{.metadata.name}}:{{revision .metadata.labels}} | {{.metadata.creationTimestamp}} | {{.metadata.generation}} | {{status .status.conditions}}
+{{end}}`
+
+var GET_DEP = `APPLICATION | CREATED | DEPLOYMENT REVISION | AVAILABLE
+{{.metadata.name}}:{{revision .metadata.labels}} | {{.metadata.creationTimestamp}} | {{.metadata.generation}} | {{status .status.conditions}}`
+
+var GET_ENV = `NAME | EDGE HOSTS | API SECRET
+{{.name}} | {{.edgeHosts}} | {{.apiSecret}}`
