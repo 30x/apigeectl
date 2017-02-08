@@ -423,12 +423,12 @@ func deleteApp(appName string) int {
 func init() {
 	getCmd.AddCommand(getApplicationsCmd)
 	getApplicationsCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee org name")
-	getApplicationsCmd.Flags().StringVarP(&format, "format", "f", "", "output format: json,yaml,raw")
+	getApplicationsCmd.Flags().StringVar(&format, "format", "", "output format: json,yaml,raw")
 
 	getCmd.AddCommand(getApplicationCmd)
 	getApplicationCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee org name")
 	getApplicationCmd.Flags().StringVarP(&appName, "name", "n", "", "application name to retrieve and optional revision, ex. my-app[:4]")
-	getApplicationCmd.Flags().StringVarP(&format, "format", "f", "", "output format: json,yaml,raw")
+	getApplicationCmd.Flags().StringVar(&format, "format", "", "output format: json,yaml,raw")
 
 	importCmd.AddCommand(importAppCmd)
 	importAppCmd.Flags().StringSliceVar(&envVars, "env-var", []string{}, "Environment variable to set in the built image \"KEY=VAL\" ")

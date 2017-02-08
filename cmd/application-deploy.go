@@ -509,7 +509,7 @@ func init() {
 	getDeploymentCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee organization name")
 	getDeploymentCmd.Flags().StringVarP(&envName, "env", "e", "", "Apigee environment name")
 	getDeploymentCmd.Flags().StringVarP(&appName, "name", "n", "", "name of application deployment to retrieve")
-	getDeploymentCmd.Flags().StringVarP(&format, "format", "f", "", "output format for response: json, yaml, raw")
+	getDeploymentCmd.Flags().StringVar(&format, "format", "", "output format for response: json, yaml, raw")
 
 	getCmd.AddCommand(logsCmd)
 	logsCmd.Flags().BoolVarP(&previous, "previous", "p", false, "used to retrieve previous container's logs")
@@ -529,7 +529,7 @@ func init() {
 	deployApplicationCmd.Flags().StringVarP(&appName, "name", "n", "", "name and revision of application to deploy, ex. \"hello:3\"")
 	deployApplicationCmd.Flags().StringSliceVar(&edgeConfigs, "edge-config", []string{}, "Edge-based configuration value exposed in deployment")
 	deployApplicationCmd.Flags().BoolVar(&force, "force", false, "used to force an update of an active deployment")
-	deployApplicationCmd.Flags().StringVarP(&format, "format", "f", "", "output format for response: json, yaml, raw")
+	deployApplicationCmd.Flags().StringVar(&format, "format", "", "output format for response: json, yaml, raw")
 
 }
 

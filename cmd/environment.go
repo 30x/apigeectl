@@ -166,7 +166,7 @@ func init() {
 	getCmd.AddCommand(environmentCmd)
 	environmentCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee organization name")
 	environmentCmd.Flags().StringVarP(&envName, "env", "e", "", "Apigee environment name")
-	environmentCmd.Flags().StringVarP(&format, "format", "f", "", "output format: json,yaml,raw")
+	environmentCmd.Flags().StringVar(&format, "format", "", "output format: json,yaml,raw")
 
 	syncCmd.AddCommand(syncEnvCmd)
 	syncEnvCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee organization name")
