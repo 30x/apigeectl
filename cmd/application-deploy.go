@@ -133,8 +133,8 @@ $ shipyardctl get deployment -o acme -e test -n example`,
 func getDeploymentNamed(envName string, depName string) int {
 	// build API call
 	req, err := http.NewRequest("GET", clusterTarget+enroberPath+"/"+envName+"/deployments/"+depName, nil)
-	if verbose {
-		PrintVerboseRequest(req)
+	if debug {
+		PrintDebugRequest(req)
 	}
 
 	req.Header.Set("Authorization", "Bearer "+authToken)
@@ -144,8 +144,8 @@ func getDeploymentNamed(envName string, depName string) int {
 		log.Fatal(err)
 	}
 
-	if verbose {
-		PrintVerboseResponse(response)
+	if debug {
+		PrintDebugResponse(response)
 	}
 
 	// dump response body to stdout
@@ -160,8 +160,8 @@ func getDeploymentNamed(envName string, depName string) int {
 
 func getDeploymentAll(envName string) int {
 	req, err := http.NewRequest("GET", clusterTarget+enroberPath+"/"+envName+"/deployments", nil)
-	if verbose {
-		PrintVerboseRequest(req)
+	if debug {
+		PrintDebugRequest(req)
 	}
 
 	req.Header.Set("Authorization", "Bearer "+authToken)
@@ -171,8 +171,8 @@ func getDeploymentAll(envName string) int {
 		log.Fatal(err)
 	}
 
-	if verbose {
-		PrintVerboseResponse(response)
+	if debug {
+		PrintDebugResponse(response)
 	}
 
 	defer response.Body.Close()
@@ -229,8 +229,8 @@ $ shipyardctl undeploy application -n example -o acme -e test`,
 func undeployApplication(envName string, depName string) int {
 	// build API call URL
 	req, err := http.NewRequest("DELETE", clusterTarget+enroberPath+"/"+envName+"/deployments/"+depName, nil)
-	if verbose {
-		PrintVerboseRequest(req)
+	if debug {
+		PrintDebugRequest(req)
 	}
 
 	req.Header.Set("Authorization", "Bearer "+authToken)
@@ -240,8 +240,8 @@ func undeployApplication(envName string, depName string) int {
 		log.Fatal(err)
 	}
 
-	if verbose {
-		PrintVerboseResponse(response)
+	if debug {
+		PrintDebugResponse(response)
 	}
 
 	// dump response body to stdout
@@ -363,8 +363,8 @@ func deployApplication(envName string, depName string, revision int32, replicas 
 	// build API call with request body (deployment information)
 	req, err := http.NewRequest("POST", clusterTarget+enroberPath+"/"+envName+"/deployments", bytes.NewBuffer(js))
 
-	if verbose {
-		PrintVerboseRequest(req)
+	if debug {
+		PrintDebugRequest(req)
 	}
 
 	req.Header.Set("Authorization", "Bearer "+authToken)
@@ -375,8 +375,8 @@ func deployApplication(envName string, depName string, revision int32, replicas 
 		log.Fatal(err)
 	}
 
-	if verbose {
-		PrintVerboseResponse(response)
+	if debug {
+		PrintDebugResponse(response)
 	}
 
 	// dump response to stdout
@@ -399,8 +399,8 @@ func updateDeployment(envName string, depName string, updateData deploymentPatch
 	req, err := http.NewRequest("PATCH", clusterTarget+enroberPath+"/"+envName+"/deployments/"+depName, bytes.NewBuffer(data))
 
 	req.Header.Set("Authorization", "Bearer "+authToken)
-	if verbose {
-		PrintVerboseRequest(req)
+	if debug {
+		PrintDebugRequest(req)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
@@ -410,8 +410,8 @@ func updateDeployment(envName string, depName string, updateData deploymentPatch
 		log.Fatal(err)
 	}
 
-	if verbose {
-		PrintVerboseResponse(response)
+	if debug {
+		PrintDebugResponse(response)
 	}
 
 	defer response.Body.Close()
@@ -475,8 +475,8 @@ func getDeploymentLogs(envName string, depName string) int {
 	} else {
 		req, err = http.NewRequest("GET", clusterTarget+enroberPath+"/"+envName+"/deployments/"+depName+"/logs", nil)
 	}
-	if verbose {
-		PrintVerboseRequest(req)
+	if debug {
+		PrintDebugRequest(req)
 	}
 
 	req.Header.Set("Authorization", "Bearer "+authToken)
@@ -486,8 +486,8 @@ func getDeploymentLogs(envName string, depName string) int {
 		log.Fatal(err)
 	}
 
-	if verbose {
-		PrintVerboseResponse(response)
+	if debug {
+		PrintDebugResponse(response)
 	}
 
 	// dump response body to stdout

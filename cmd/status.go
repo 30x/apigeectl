@@ -37,8 +37,8 @@ $ shipyardctl get status`,
 
 		// get kiln status
 		kilnReq, err := http.NewRequest("GET", clusterTarget+"/organizations/status", nil)
-		if verbose {
-			PrintVerboseRequest(kilnReq)
+		if debug {
+			PrintDebugRequest(kilnReq)
 		}
 
 		kilnRes, err := http.DefaultClient.Do(kilnReq)
@@ -46,8 +46,8 @@ $ shipyardctl get status`,
 			log.Fatal(err)
 		}
 
-		if verbose {
-			PrintVerboseResponse(kilnRes)
+		if debug {
+			PrintDebugResponse(kilnRes)
 		}
 
 		defer kilnRes.Body.Close()
@@ -58,8 +58,8 @@ $ shipyardctl get status`,
 		}
 
 		enroberReq, err := http.NewRequest("GET", clusterTarget+"/environments/status", nil)
-		if verbose {
-			PrintVerboseRequest(enroberReq)
+		if debug {
+			PrintDebugRequest(enroberReq)
 		}
 
 		enroberRes, err := http.DefaultClient.Do(enroberReq)
@@ -67,8 +67,8 @@ $ shipyardctl get status`,
 			log.Fatal(err)
 		}
 
-		if verbose {
-			PrintVerboseResponse(enroberRes)
+		if debug {
+			PrintDebugResponse(enroberRes)
 		}
 
 		defer enroberRes.Body.Close()

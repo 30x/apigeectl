@@ -64,20 +64,20 @@ $ shipyardctl create bundle -n exampleName`,
 		// move zip to designated savePath
 		if savePath != "" {
 			err = os.Rename(zipDir, filepath.Join(savePath, bundleName+".zip"))
-			if verbose {
+			if debug {
 				fmt.Println("Moving proxy folder to " + savePath)
 			}
 			checkError(err, "Unable to move apiproxy to target save directory")
 		} else { // move apiproxy from tmpdir to cwd
 			cwd, err := os.Getwd()
 			err = os.Rename(zipDir, filepath.Join(cwd, bundleName+".zip"))
-			if verbose {
+			if debug {
 				fmt.Println("Moving proxy folder to CWD")
 			}
 			checkError(err, "Unable to move apiproxy bundle to cwd")
 		}
 
-		if verbose {
+		if debug {
 			fmt.Println("Deleting tmpdir")
 		}
 	},
@@ -119,7 +119,7 @@ $ shipyardctl deploy proxy -o acme -e test -z /path/to/bundle/zip `,
 			checkError(err, "Problem building proxy bundle")
 		}
 
-		err = mgmt.UploadProxyBundle(config.GetCurrentMgmtAPITarget(), orgName, envName, config.GetCurrentToken(), bundlePath, appName, verbose)
+		err = mgmt.UploadProxyBundle(config.GetCurrentMgmtAPITarget(), orgName, envName, config.GetCurrentToken(), bundlePath, appName, debug)
 		checkError(err, "")
 	},
 }
@@ -131,7 +131,7 @@ func MakeProxyBundle(name string) (string, string, error) {
 		return "", "", err
 	}
 
-	if verbose {
+	if debug {
 		fmt.Println("Creating tmpdir at: " + tmpdir)
 	}
 
@@ -139,7 +139,7 @@ func MakeProxyBundle(name string) (string, string, error) {
 	dir := filepath.Join(tmpdir, "apiproxy")
 	err = os.Mkdir(dir, fileMode)
 
-	if verbose {
+	if debug {
 		fmt.Println("Creating folder 'apiproxy' at: " + dir)
 	}
 
@@ -149,7 +149,7 @@ func MakeProxyBundle(name string) (string, string, error) {
 
 	proxiesDirPath := filepath.Join(dir, "proxies")
 	err = os.Mkdir(proxiesDirPath, fileMode)
-	if verbose {
+	if debug {
 		fmt.Println("Creating subfolder 'proxies' at: " + proxiesDirPath)
 	}
 	if err != nil {
@@ -158,7 +158,7 @@ func MakeProxyBundle(name string) (string, string, error) {
 
 	targetsDirPath := filepath.Join(dir, "targets")
 	err = os.Mkdir(targetsDirPath, fileMode)
-	if verbose {
+	if debug {
 		fmt.Println("Creating subfolder 'targets' at: " + targetsDirPath)
 	}
 	if err != nil {
@@ -167,7 +167,7 @@ func MakeProxyBundle(name string) (string, string, error) {
 
 	policiesDirPath := filepath.Join(dir, "policies")
 	err = os.Mkdir(policiesDirPath, fileMode)
-	if verbose {
+	if debug {
 		fmt.Println("Creating subfolder 'policies' at: " + policiesDirPath)
 	}
 	if err != nil {
@@ -188,7 +188,7 @@ func MakeProxyBundle(name string) (string, string, error) {
 	// example.xml --> ./apiproxy/
 	proxy_xml, err := os.Create(filepath.Join(dir, name+".xml"))
 	err = proxy_xml.Chmod(fileMode)
-	if verbose {
+	if debug {
 		fmt.Println("Creating file '" + name + ".xml'")
 	}
 	if err != nil {
@@ -208,7 +208,7 @@ func MakeProxyBundle(name string) (string, string, error) {
 	// AddCors.xml --> ./apiproxy/policies
 	add_cors_xml, err := os.Create(filepath.Join(policiesDirPath, "AddCors.xml"))
 	err = add_cors_xml.Chmod(fileMode)
-	if verbose {
+	if debug {
 		fmt.Println("Creating file 'policies/AddCors.xml'")
 	}
 	if err != nil {
@@ -228,7 +228,7 @@ func MakeProxyBundle(name string) (string, string, error) {
 	// default.xml --> ./apiproxy/proxies && ./apiproxy/targets
 	proxy_default_xml, err := os.Create(filepath.Join(proxiesDirPath, "default.xml"))
 	err = proxy_default_xml.Chmod(fileMode)
-	if verbose {
+	if debug {
 		fmt.Println("Creating file 'proxies/default.xml'")
 	}
 	if err != nil {
@@ -237,7 +237,7 @@ func MakeProxyBundle(name string) (string, string, error) {
 
 	target_default_xml, err := os.Create(filepath.Join(targetsDirPath, "default.xml"))
 	err = target_default_xml.Chmod(fileMode)
-	if verbose {
+	if debug {
 		fmt.Println("Creating file 'targets/default.xml'")
 	}
 	if err != nil {

@@ -100,7 +100,7 @@ The list of available commands is as follows:
         deployment
 ```
 
-All commands support verbose output with the `-v` or `--verbose` flag.
+All commands support debug output with the `-v` or `--debug` flag.
 
 Please also see `shipyardctl --help` for more information on the available commands and their arguments.
 
