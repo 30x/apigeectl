@@ -1,5 +1,5 @@
-hash: 821a37a6e1c7c32c3cf2d3ac8428280109c25b6575538f0da57a5690b0a43922
-updated: 2017-02-02T12:47:30.182854892-08:00
+hash: bc130405594de6678aefcb8704adde41e25a9b1188235bb2ffd89a2906f3162d
+updated: 2017-02-07T17:04:23.517342527-08:00
 imports:
 - name: github.com/30x/zipper
   version: 2ce12acb69610439b5d5f5bf9c4f81ec5b28847b
@@ -7,8 +7,10 @@ imports:
   version: 3ca23474a7c7203e0a0a070fd33508f6efdb9b3d
 - name: github.com/inconshreveable/mousetrap
   version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
+- name: github.com/ryanuber/columnize
+  version: 983d3a5fab1bf04d1b412465d2d9f8430e2e917e
 - name: github.com/spf13/cobra
-  version: 35136c09d8da66b901337c6e86fd8e88a1a255bd
+  version: 99600f6874c95daab762dc2373dc3ee1f6a48575
 - name: github.com/spf13/pflag
   version: 5ccb023bc27df288a957c5e994cd44fd19619465
 - name: golang.org/x/crypto
