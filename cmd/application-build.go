@@ -36,46 +36,6 @@ import (
 // DefaultRuntime is the default runtime selection for imported apps
 const DefaultRuntime = "node:4"
 
-// getApplicationsCmd represents the application command
-var getApplicationsCmd = &cobra.Command{
-	Use:   "applications",
-	Short: "retrieve all applications in a appspace",
-	Long: `This retrieves all of the applications in the configured appspace,
-returning all available information.
-
-Example of use:
-
-$ shipyardctl get application --org org1`,
-	PreRunE: func(cmd *cobra.Command, args []string) error {
-		if err := RequireAuthToken(); err != nil {
-			return err
-		}
-
-		if err := RequireOrgName(); err != nil {
-			return err
-		}
-
-		if format == "" {
-			format = "get-apps"
-		}
-
-		MakeBuildPath()
-
-		return nil
-	},
-	Run: func(cmd *cobra.Command, args []string) {
-		status := getApplications()
-		if !CheckIfAuthn(status) {
-			// retry once more
-			status := getApplications()
-			if status == 401 {
-				fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
-				fmt.Println("Command failed.")
-			}
-		}
-	},
-}
-
 func getApplications() int {
 	req, err := http.NewRequest("GET", clusterTarget+basePath, nil)
 	if debug {
@@ -120,8 +80,10 @@ $ shipyardctl get application --org org1 --name exampleApp`,
 			return err
 		}
 
-		if err := RequireAppName(); err != nil {
-			return err
+		if !all {
+			if err := RequireAppName(); err != nil {
+				return err
+			}
 		}
 
 		MakeBuildPath()
@@ -129,13 +91,29 @@ $ shipyardctl get application --org org1 --name exampleApp`,
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		status := getApplication(appName, orgName)
-		if !CheckIfAuthn(status) {
-			// retry once more
+		if all {
+			if format == "" {
+				format = "get-apps"
+			}
+
+			status := getApplications()
+			if !CheckIfAuthn(status) {
+				// retry once more
+				status := getApplications()
+				if status == 401 {
+					fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
+					fmt.Println("Command failed.")
+				}
+			}
+		} else {
 			status := getApplication(appName, orgName)
-			if status == 401 {
-				fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
-				fmt.Println("Command failed.")
+			if !CheckIfAuthn(status) {
+				// retry once more
+				status := getApplication(appName, orgName)
+				if status == 401 {
+					fmt.Println("Unable to authenticate. Please check your SSO target URL is correct.")
+					fmt.Println("Command failed.")
+				}
 			}
 		}
 	},
@@ -426,14 +404,11 @@ func deleteApp(appName string) int {
 }
 
 func init() {
-	getCmd.AddCommand(getApplicationsCmd)
-	getApplicationsCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee org name")
-	getApplicationsCmd.Flags().StringVar(&format, "format", "", "output format: json,yaml,raw")
-
 	getCmd.AddCommand(getApplicationCmd)
 	getApplicationCmd.Flags().StringVarP(&orgName, "org", "o", "", "Apigee org name")
 	getApplicationCmd.Flags().StringVarP(&appName, "name", "n", "", "application name to retrieve and optional revision, ex. my-app[:4]")
 	getApplicationCmd.Flags().StringVar(&format, "format", "", "output format: json,yaml,raw")
+	getApplicationCmd.Flags().BoolVarP(&all, "all", "a", false, "Retrieve all imported applications")
 
 	importCmd.AddCommand(importAppCmd)
 	importAppCmd.Flags().StringSliceVar(&envVars, "env-var", []string{}, "Environment variable to set in the built image \"KEY=VAL\" ")
